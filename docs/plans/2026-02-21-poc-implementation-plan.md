@@ -424,7 +424,7 @@ from app.config import get_settings
 # Create the vision agent
 vision_agent = Agent(
     "openai:gpt-4o",
-    result_type=DrawingAnalysis,
+    output_type=DrawingAnalysis,
     system_prompt="""You are analyzing a child's drawing. Your job is to identify:
 1. The main subject (character, animal, object)
 2. The setting or background
@@ -576,7 +576,7 @@ def get_age_guideline(age: int) -> str:
 # Create the story agent
 story_agent = Agent(
     "openai:gpt-4o",
-    result_type=StoryScript,
+    output_type=StoryScript,
     system_prompt="""You are a children's story writer. Generate a story based on the drawing
 and theme provided.
 
