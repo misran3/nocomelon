@@ -1,7 +1,6 @@
 """Stage 3: Generate images for each scene using DALL-E 3."""
 
 import uuid
-from pathlib import Path
 
 from openai import AsyncOpenAI
 import aiofiles
