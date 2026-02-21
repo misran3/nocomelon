@@ -9,10 +9,6 @@ st.set_page_config(
     layout="wide",
 )
 
-# Sidebar branding
-st.sidebar.title("🎨 NoComelon")
-st.sidebar.caption("AI Storybook Pipeline")
-
 API_BASE = "http://localhost:8000"
 
 
