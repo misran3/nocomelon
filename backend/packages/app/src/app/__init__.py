@@ -1,2 +1,1 @@
-def hello() -> str:
-    return "Hello from app!"
+"""NoComelon AI Pipeline."""
