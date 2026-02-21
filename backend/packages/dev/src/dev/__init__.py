@@ -1,2 +1,1 @@
-def hello() -> str:
-    return "Hello from dev!"
+"""Streamlit development/testing app."""
