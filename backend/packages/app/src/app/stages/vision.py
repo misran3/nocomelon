@@ -49,4 +49,4 @@ async def analyze_drawing(image_base64: str) -> DrawingAnalysis:
         ]
     )
 
-    return result.data
+    return result.output

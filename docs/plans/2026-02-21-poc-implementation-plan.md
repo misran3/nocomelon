@@ -463,7 +463,7 @@ async def analyze_drawing(image_base64: str) -> DrawingAnalysis:
         ]
     )
 
-    return result.data
+    return result.output
 ```
 
 **Step 3: Create test directory and write test**
@@ -637,7 +637,7 @@ async def generate_story(
     prompt = "\n".join(prompt_parts)
 
     result = await story_agent.run(prompt)
-    return result.data
+    return result.output
 ```
 
 **Step 2: Update stages __init__.py**

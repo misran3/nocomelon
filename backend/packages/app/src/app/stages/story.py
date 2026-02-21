@@ -93,4 +93,4 @@ async def generate_story(
     prompt = "\n".join(prompt_parts)
 
     result = await story_agent.run(prompt)
-    return result.data
+    return result.output
