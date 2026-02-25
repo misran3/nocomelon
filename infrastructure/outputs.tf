@@ -71,3 +71,13 @@ output "dynamodb_checkpoints_table" {
   description = "DynamoDB Checkpoints table name"
   value       = aws_dynamodb_table.checkpoints.name
 }
+
+output "amplify_app_id" {
+  description = "Amplify App ID for deployments"
+  value       = aws_amplify_app.frontend.id
+}
+
+output "amplify_default_domain" {
+  description = "Amplify default domain"
+  value       = aws_amplify_app.frontend.default_domain
+}
