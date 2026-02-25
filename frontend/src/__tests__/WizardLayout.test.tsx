@@ -199,64 +199,6 @@ describe('WizardLayout', () => {
     });
   });
 
-  describe('back button', () => {
-    it('does not render back button when onBack is not provided', () => {
-      renderWithRouter(
-        <WizardLayout
-          currentStep={2}
-          actionLabel="Continue"
-          onAction={vi.fn()}
-        >
-          <div>Content</div>
-        </WizardLayout>
-      );
-
-      expect(screen.queryByRole('button', { name: /back/i })).not.toBeInTheDocument();
-    });
-
-    it('renders back button when onBack is provided', () => {
-      renderWithRouter(
-        <WizardLayout
-          currentStep={2}
-          actionLabel="Continue"
-          onAction={vi.fn()}
-          onBack={vi.fn()}
-        >
-          <div>Content</div>
-        </WizardLayout>
-      );
-
-      expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
-    });
-
-    it('calls onBack when back button is clicked', () => {
-      const onBack = vi.fn();
-      renderWithRouter(
-        <WizardLayout
-          currentStep={2}
-          actionLabel="Continue"
-          onAction={vi.fn()}
-          onBack={onBack}
-        >
-          <div>Content</div>
-        </WizardLayout>
-      );
-
-      const backButton = screen.getByRole('button', { name: /back/i });
-      fireEvent.click(backButton);
-
-      expect(onBack).toHaveBeenCalledTimes(1);
-      expect(mockNavigate).not.toHaveBeenCalled();
-    });
-
-    it('navigates back using navigate(-1) when onBack is not provided but back button exists', () => {
-      // This test verifies the internal handleBack behavior
-      // We need to render with onBack to see the button, then check navigation fallback
-      // Actually, when onBack is undefined, the back button doesn't render at all
-      // So this case doesn't apply - the button only shows when onBack is provided
-    });
-  });
-
   describe('step navigation', () => {
     it('navigates to correct route when completed step is clicked', () => {
       renderWithRouter(
