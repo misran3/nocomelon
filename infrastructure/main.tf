@@ -539,3 +539,38 @@ resource "aws_amplify_branch" "main" {
   branch_name = "main"
   stage       = "PRODUCTION"
 }
+
+# ------------------------------------------------------------------------------
+# API Gateway HTTP API (HTTPS frontend for ALB)
+# ------------------------------------------------------------------------------
+resource "aws_apigatewayv2_vpc_link" "main" {
+  name               = "${var.app_name}-vpc-link"
+  subnet_ids         = data.aws_subnets.selected.ids
+  security_group_ids = [aws_security_group.alb.id]
+}
+
+resource "aws_apigatewayv2_api" "main" {
+  name          = "${var.app_name}-api"
+  protocol_type = "HTTP"
+}
+
+resource "aws_apigatewayv2_integration" "alb" {
+  api_id             = aws_apigatewayv2_api.main.id
+  integration_type   = "HTTP_PROXY"
+  integration_method = "ANY"
+  integration_uri    = aws_lb_listener.app.arn
+  connection_type    = "VPC_LINK"
+  connection_id      = aws_apigatewayv2_vpc_link.main.id
+}
+
+resource "aws_apigatewayv2_route" "proxy" {
+  api_id    = aws_apigatewayv2_api.main.id
+  route_key = "$default"
+  target    = "integrations/${aws_apigatewayv2_integration.alb.id}"
+}
+
+resource "aws_apigatewayv2_stage" "prod" {
+  api_id      = aws_apigatewayv2_api.main.id
+  name        = "$default"
+  auto_deploy = true
+}

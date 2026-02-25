@@ -81,3 +81,8 @@ output "amplify_default_domain" {
   description = "Amplify default domain"
   value       = aws_amplify_app.frontend.default_domain
 }
+
+output "api_gateway_url" {
+  description = "API Gateway invoke URL"
+  value       = aws_apigatewayv2_api.main.api_endpoint
+}
