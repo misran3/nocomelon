@@ -1,12 +1,14 @@
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { 
-  Play, 
-  Maximize, 
-  Share2, 
-  Trash2 
+import {
+  Maximize,
+  Share2,
+  Trash2
 } from 'lucide-react';
-import { StorybookEntry } from '../../types';
+import { LibraryEntry } from '../../types';
+import { useS3Url } from '../../hooks/use-s3-url';
+import VideoPlayer from '../preview/VideoPlayer';
 import { 
   Sheet, 
   SheetContent, 
@@ -28,13 +30,17 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 
 interface StorybookSheetProps {
-  storybook: StorybookEntry | null;
+  storybook: LibraryEntry | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;  // Now async
 }
 
 export function StorybookSheet({ storybook, open, onOpenChange, onDelete }: StorybookSheetProps) {
+  const { url: videoUrl } = useS3Url(storybook?.video_key);
+  const { url: thumbnailUrl } = useS3Url(storybook?.thumbnail_key);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   if (!storybook) return null;
 
   const handleShare = async () => {
@@ -43,9 +49,15 @@ export function StorybookSheet({ storybook, open, onOpenChange, onDelete }: Stor
     toast("Link copied!");
   };
 
-  const handleDelete = () => {
-    onDelete(storybook.id);
-    onOpenChange(false);
+  const handleDelete = async () => {
+    if (!storybook) return;
+    setIsDeleting(true);
+    try {
+      await onDelete(storybook.id);
+      onOpenChange(false);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -56,7 +68,7 @@ export function StorybookSheet({ storybook, open, onOpenChange, onDelete }: Stor
             <SheetTitle className="text-xl font-bold">{storybook.title}</SheetTitle>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-sm text-muted-foreground">
-                {format(storybook.createdAt, 'MMM d, yyyy')}
+                {format(new Date(storybook.created_at), 'MMM d, yyyy')}
               </span>
               <span className="text-muted-foreground">·</span>
               <Badge variant="secondary" className="capitalize">
@@ -66,8 +78,8 @@ export function StorybookSheet({ storybook, open, onOpenChange, onDelete }: Stor
           </SheetHeader>
         </div>
 
-        <div className="relative w-full aspect-video bg-gray-200 flex items-center justify-center">
-          <Play className="w-16 h-16 text-gray-400" />
+        <div className="relative w-full">
+          <VideoPlayer src={videoUrl || ''} poster={thumbnailUrl || ''} />
         </div>
 
         <div className="p-5 pt-4 space-y-3 border-t bg-background">
@@ -108,11 +120,12 @@ export function StorybookSheet({ storybook, open, onOpenChange, onDelete }: Stor
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction 
+                <AlertDialogAction
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   onClick={handleDelete}
+                  disabled={isDeleting}
                 >
-                  Delete
+                  {isDeleting ? 'Deleting...' : 'Delete'}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
