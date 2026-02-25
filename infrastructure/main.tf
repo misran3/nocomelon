@@ -13,15 +13,15 @@ provider "aws" {
   profile = var.aws_profile
 }
 
-# Use default VPC for simplicity
-data "aws_vpc" "default" {
-  default = true
+# Use specified VPC
+data "aws_vpc" "selected" {
+  id = var.vpc_id
 }
 
-data "aws_subnets" "default" {
+data "aws_subnets" "selected" {
   filter {
     name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
+    values = [var.vpc_id]
   }
 }
 
@@ -88,7 +88,7 @@ resource "aws_cloudwatch_log_group" "app" {
 resource "aws_security_group" "alb" {
   name        = "${var.app_name}-alb-sg"
   description = "Security group for ALB"
-  vpc_id      = data.aws_vpc.default.id
+  vpc_id      = data.aws_vpc.selected.id
 
   ingress {
     description = "HTTP from anywhere"
@@ -109,7 +109,7 @@ resource "aws_security_group" "alb" {
 resource "aws_security_group" "ecs" {
   name        = "${var.app_name}-ecs-sg"
   description = "Security group for ECS tasks"
-  vpc_id      = data.aws_vpc.default.id
+  vpc_id      = data.aws_vpc.selected.id
 
   ingress {
     description     = "Traffic from ALB"
@@ -135,14 +135,14 @@ resource "aws_lb" "app" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
-  subnets            = data.aws_subnets.default.ids
+  subnets            = data.aws_subnets.selected.ids
 }
 
 resource "aws_lb_target_group" "app" {
   name        = "${var.app_name}-tg"
   port        = var.container_port
   protocol    = "HTTP"
-  vpc_id      = data.aws_vpc.default.id
+  vpc_id      = data.aws_vpc.selected.id
   target_type = "ip"
 
   health_check {
@@ -318,7 +318,7 @@ resource "aws_ecs_service" "app" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = data.aws_subnets.default.ids
+    subnets          = data.aws_subnets.selected.ids
     security_groups  = [aws_security_group.ecs.id]
     assign_public_ip = true
   }

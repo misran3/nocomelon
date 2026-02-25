@@ -39,3 +39,8 @@ variable "health_check_path" {
   type        = string
   default     = "/health"
 }
+
+variable "vpc_id" {
+  description = "VPC ID to deploy into"
+  type        = string
+}
