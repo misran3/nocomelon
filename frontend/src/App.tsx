@@ -1,6 +1,8 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router";
 import { WizardProvider } from "./hooks/use-wizard-state";
+import { AuthProvider } from "./hooks/use-auth";
+import { AuthGuard } from "./components/auth/AuthGuard";
 
 // Lazy load all pages for code splitting
 const NotFound = lazy(() => import("./pages/not-found"));
@@ -10,6 +12,7 @@ const RecognizePage = lazy(() => import("./pages/recognize"));
 const CustomizePage = lazy(() => import("./pages/customize"));
 const ScriptPage = lazy(() => import("./pages/script"));
 const PreviewPage = lazy(() => import("./pages/preview"));
+const SignInPage = lazy(() => import("./pages/sign-in"));
 
 // Loading fallback component
 function PageLoader() {
@@ -25,19 +28,31 @@ function PageLoader() {
 
 export default function App() {
   return (
-    <WizardProvider>
+    <AuthProvider>
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/" element={<Navigate to="/upload" replace />} />
-          <Route path="/upload" element={<UploadPage />} />
-          <Route path="/recognize" element={<RecognizePage />} />
-          <Route path="/customize" element={<CustomizePage />} />
-          <Route path="/script" element={<ScriptPage />} />
-          <Route path="/preview" element={<PreviewPage />} />
-          <Route path="/library" element={<LibraryPage />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="/sign-in" element={<SignInPage />} />
+          <Route
+            path="/*"
+            element={
+              <AuthGuard>
+                <WizardProvider>
+                  <Routes>
+                    <Route path="/" element={<Navigate to="/upload" replace />} />
+                    <Route path="/upload" element={<UploadPage />} />
+                    <Route path="/recognize" element={<RecognizePage />} />
+                    <Route path="/customize" element={<CustomizePage />} />
+                    <Route path="/script" element={<ScriptPage />} />
+                    <Route path="/preview" element={<PreviewPage />} />
+                    <Route path="/library" element={<LibraryPage />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </WizardProvider>
+              </AuthGuard>
+            }
+          />
         </Routes>
       </Suspense>
-    </WizardProvider>
+    </AuthProvider>
   );
 }
