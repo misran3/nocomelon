@@ -57,10 +57,17 @@ export default function PreviewPage() {
 
     async function runPipeline() {
       try {
+        // Explicit null checks (defense-in-depth)
+        if (!state.run_id || !state.script || !state.analysis) {
+          setError('Missing required data. Please start over.');
+          setIsGenerating(false);
+          return;
+        }
+
         const request: PipelineRequest = {
-          run_id: state.run_id!,
-          story: state.script!,
-          drawing: state.analysis!,
+          run_id: state.run_id,
+          story: state.script,
+          drawing: state.analysis,
           style: state.customization.style,
           voice_type: state.customization.voice,
           user_id: user?.userId,
