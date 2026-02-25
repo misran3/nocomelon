@@ -23,21 +23,23 @@ export interface StoryScript {
 }
 
 export interface VideoResult {
-  video_path: string;
+  video_key: string;       // S3 key (was video_path)
   duration_sec: number;
-  thumbnail: string;
+  thumbnail_key: string;   // S3 key (was thumbnail)
 }
 
-export interface StorybookEntry {
+export interface LibraryEntry {
   id: string;
   title: string;
-  thumbnail: string;
+  thumbnail_key: string;   // S3 key
+  video_key: string;       // S3 key
   duration_sec: number;
   style: Style;
-  createdAt: Date;
+  created_at: string;      // ISO timestamp (not Date)
 }
 
 export interface WizardState {
+  run_id: string | null;   // NEW: from vision API
   drawing: File | null;
   analysis: DrawingAnalysis | null;
   customization: {
