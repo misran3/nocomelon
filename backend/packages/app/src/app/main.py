@@ -98,6 +98,15 @@ async def api_analyze_drawing(request: VisionRequest):
     try:
         run_id = uuid.uuid4().hex[:8]
         drawing = await analyze_drawing(request.image_base64)
+
+        # Save checkpoint if user is authenticated
+        if request.user_id:
+            db = get_database()
+            db.save_checkpoint(request.user_id, run_id, {
+                "current_stage": "vision",
+                "drawing_analysis": drawing.model_dump(),
+            })
+
         return VisionResponse(run_id=run_id, drawing=drawing)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -107,13 +116,24 @@ async def api_analyze_drawing(request: VisionRequest):
 async def api_generate_story(request: StoryRequest):
     """Stage 2: Generate a story."""
     try:
-        return await generate_story(
+        story = await generate_story(
             drawing=request.drawing,
             theme=request.theme,
             child_age=request.child_age,
             voice_type=request.voice_type,
             personal_context=request.personal_context,
         )
+
+        # Save checkpoint if user is authenticated
+        if request.user_id and request.run_id:
+            db = get_database()
+            db.save_checkpoint(request.user_id, request.run_id, {
+                "current_stage": "story",
+                "drawing_analysis": request.drawing.model_dump(),
+                "story_script": story.model_dump(),
+            })
+
+        return story
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
