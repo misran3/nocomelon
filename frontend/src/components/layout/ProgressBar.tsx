@@ -1,5 +1,5 @@
 import { cn } from '../../lib/utils';
-import { STEP_LABELS, TOTAL_STEPS } from '../../lib/mock-data';
+import { STEP_LABELS, TOTAL_STEPS } from '../../lib/constants';
 
 interface ProgressBarProps {
   currentStep: number;

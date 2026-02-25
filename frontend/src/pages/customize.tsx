@@ -11,7 +11,7 @@ import VoicePicker from '../components/customize/VoicePicker';
 import AgePicker from '../components/customize/AgePicker';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
-import { STYLES, THEMES, VOICES, MOCK_STORY } from '../lib/mock-data';
+import { STYLES, THEMES, VOICES } from '../lib/constants';
 import { Style, Theme, VoiceType } from '../types';
 
 const customizationSchema = z.object({
@@ -25,7 +25,7 @@ const customizationSchema = z.object({
 type CustomizationFormValues = z.infer<typeof customizationSchema>;
 
 export default function CustomizePage() {
-  const { state, setCustomization, setScript } = useWizardState();
+  const { state, setCustomization } = useWizardState();
   const navigate = useNavigate();
 
   const form = useForm<CustomizationFormValues>({
@@ -55,7 +55,6 @@ export default function CustomizePage() {
       age: data.age,
       personalContext: data.personalContext,
     });
-    setScript(MOCK_STORY);
     navigate('/script');
   };
 

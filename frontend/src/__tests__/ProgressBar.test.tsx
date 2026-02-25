@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProgressBar } from '../components/layout/ProgressBar';
-import { STEP_LABELS, TOTAL_STEPS } from '../lib/mock-data';
+import { STEP_LABELS, TOTAL_STEPS } from '../lib/constants';
 
 describe('ProgressBar', () => {
   describe('rendering', () => {
