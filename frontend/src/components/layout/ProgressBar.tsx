@@ -1,4 +1,5 @@
 import { cn } from '../../lib/utils';
+import { STEP_LABELS } from '../../lib/mock-data';
 
 interface ProgressBarProps {
   currentStep: number;
@@ -8,45 +9,59 @@ interface ProgressBarProps {
 
 export function ProgressBar({ currentStep, totalSteps = 6, onStepClick }: ProgressBarProps) {
   return (
-    <div className="flex items-center justify-center gap-2">
-      {Array.from({ length: totalSteps }).map((_, i) => {
-        const step = i + 1;
-        const isCompleted = step < currentStep;
-        const isCurrent = step === currentStep;
+    <div className="w-full">
+      <div className="flex items-center justify-between">
+        {Array.from({ length: totalSteps }).map((_, i) => {
+          const step = i + 1;
+          const isCompleted = step < currentStep;
+          const isCurrent = step === currentStep;
+          const isLast = step === totalSteps;
 
-        if (isCompleted) {
           return (
-            <button
-              key={step}
-              onClick={() => onStepClick?.(step)}
-              className={cn(
-                "w-2.5 h-2.5 rounded-full bg-secondary cursor-pointer transition-all duration-200",
-                "hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
+            <div key={step} className="flex items-center flex-1 last:flex-none">
+              {/* Step circle + label */}
+              <div className="flex flex-col items-center">
+                <button
+                  onClick={() => isCompleted && onStepClick?.(step)}
+                  disabled={!isCompleted}
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-200",
+                    isCompleted && "bg-secondary text-secondary-foreground cursor-pointer hover:opacity-80",
+                    isCurrent && "bg-primary text-primary-foreground ring-4 ring-primary/20",
+                    !isCompleted && !isCurrent && "border-2 border-gray-300 text-gray-400 cursor-default"
+                  )}
+                  type="button"
+                  aria-label={`Step ${step}: ${STEP_LABELS[i]}`}
+                  aria-current={isCurrent ? "step" : undefined}
+                >
+                  {step}
+                </button>
+                {/* Label - hidden on mobile, visible on md+ */}
+                <span
+                  className={cn(
+                    "hidden md:block mt-2 text-xs font-medium text-center whitespace-nowrap",
+                    isCurrent && "text-primary font-semibold",
+                    isCompleted && "text-secondary",
+                    !isCompleted && !isCurrent && "text-muted-foreground"
+                  )}
+                >
+                  {STEP_LABELS[i]}
+                </span>
+              </div>
+
+              {/* Connecting line */}
+              {!isLast && (
+                <div
+                  className={cn(
+                    "flex-1 h-0.5 mx-2",
+                    step < currentStep ? "bg-secondary" : "bg-gray-200"
+                  )}
+                />
               )}
-              aria-label={`Go to step ${step}`}
-              type="button"
-            />
+            </div>
           );
-        }
-
-        if (isCurrent) {
-          return (
-            <span
-              key={step}
-              className="w-3 h-3 rounded-full bg-primary transition-all duration-200"
-              aria-current="step"
-            />
-          );
-        }
-
-        // Future
-        return (
-          <span
-            key={step}
-            className="w-2.5 h-2.5 rounded-full border-2 border-gray-300 bg-transparent transition-all duration-200"
-          />
-        );
-      })}
+        })}
+      </div>
     </div>
   );
 }
