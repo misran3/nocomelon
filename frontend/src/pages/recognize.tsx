@@ -10,7 +10,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import { toast } from 'sonner';
 
 export default function RecognizePage() {
-  const { state, setAnalysis } = useWizardState();
+  const { state, setAnalysis, setRunId } = useWizardState();
   const navigate = useNavigate();
   const [analyzing, setAnalyzing] = useState(true);
   const [formData, setFormData] = useState({
@@ -49,6 +49,7 @@ export default function RecognizePage() {
           try {
             const base64 = (reader.result as string).split(',')[1];
             const response = await analyzeDrawing(base64);
+            setRunId(response.run_id);
             setFormData({
               subject: response.drawing.subject,
               setting: response.drawing.setting,
