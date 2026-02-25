@@ -94,7 +94,7 @@ class TestUploadFile:
         mock_boto3.client.return_value = mock_client
 
         storage = S3Storage(bucket_name="my-bucket", region="us-west-2")
-        storage.upload_file(
+        result = storage.upload_file(
             local_path="/tmp/test.txt",
             s3_key="user123/files/test.txt"
         )
@@ -105,6 +105,7 @@ class TestUploadFile:
             "my-bucket",
             "user123/files/test.txt"
         )
+        assert result == "s3://my-bucket/user123/files/test.txt"
 
     @patch("app.storage.boto3")
     def test_upload_file_with_path_object(self, mock_boto3):
@@ -113,7 +114,7 @@ class TestUploadFile:
         mock_boto3.client.return_value = mock_client
 
         storage = S3Storage(bucket_name="my-bucket", region="us-west-2")
-        storage.upload_file(
+        result = storage.upload_file(
             local_path=Path("/tmp/test.txt"),
             s3_key="user123/files/test.txt"
         )
@@ -123,6 +124,7 @@ class TestUploadFile:
             "my-bucket",
             "user123/files/test.txt"
         )
+        assert result == "s3://my-bucket/user123/files/test.txt"
 
 
 class TestUploadBytes:
@@ -136,53 +138,80 @@ class TestUploadBytes:
 
         storage = S3Storage(bucket_name="my-bucket", region="us-east-1")
         test_data = b"Hello, World!"
-        storage.upload_bytes(data=test_data, s3_key="user123/data.bin")
+        result = storage.upload_bytes(data=test_data, s3_key="user123/data.bin")
 
         mock_client.put_object.assert_called_once()
         call_kwargs = mock_client.put_object.call_args[1]
         assert call_kwargs["Bucket"] == "my-bucket"
         assert call_kwargs["Key"] == "user123/data.bin"
         assert call_kwargs["Body"] == test_data
+        assert result == "s3://my-bucket/user123/data.bin"
 
 
 class TestDownloadFile:
     """Tests for download_file method."""
 
     @patch("app.storage.boto3")
-    def test_download_file(self, mock_boto3):
-        """Should download file from S3 to local path."""
+    def test_download_file(self, mock_boto3, tmp_path):
+        """Should download file from S3 to local path and return Path object."""
         mock_client = MagicMock()
         mock_boto3.client.return_value = mock_client
 
         storage = S3Storage(bucket_name="my-bucket", region="us-east-1")
-        storage.download_file(
+        local_path = tmp_path / "downloaded.txt"
+        result = storage.download_file(
             s3_key="user123/files/data.txt",
-            local_path="/tmp/downloaded.txt"
+            local_path=str(local_path)
         )
 
         mock_client.download_file.assert_called_once_with(
             "my-bucket",
             "user123/files/data.txt",
-            "/tmp/downloaded.txt"
+            str(local_path)
         )
+        assert result == local_path
+        assert isinstance(result, Path)
 
     @patch("app.storage.boto3")
-    def test_download_file_with_path_object(self, mock_boto3):
+    def test_download_file_with_path_object(self, mock_boto3, tmp_path):
         """Should handle Path objects for local_path."""
         mock_client = MagicMock()
         mock_boto3.client.return_value = mock_client
 
         storage = S3Storage(bucket_name="my-bucket", region="us-east-1")
-        storage.download_file(
+        local_path = tmp_path / "downloaded.txt"
+        result = storage.download_file(
             s3_key="user123/files/data.txt",
-            local_path=Path("/tmp/downloaded.txt")
+            local_path=local_path
         )
 
         mock_client.download_file.assert_called_once_with(
             "my-bucket",
             "user123/files/data.txt",
-            "/tmp/downloaded.txt"
+            str(local_path)
         )
+        assert result == local_path
+        assert isinstance(result, Path)
+
+    @patch("app.storage.boto3")
+    def test_download_file_creates_parent_directories(self, mock_boto3, tmp_path):
+        """Should create parent directories if they don't exist."""
+        mock_client = MagicMock()
+        mock_boto3.client.return_value = mock_client
+
+        storage = S3Storage(bucket_name="my-bucket", region="us-east-1")
+        # Create a path with nested directories that don't exist
+        local_path = tmp_path / "nested" / "dirs" / "downloaded.txt"
+        assert not local_path.parent.exists()
+
+        result = storage.download_file(
+            s3_key="user123/files/data.txt",
+            local_path=local_path
+        )
+
+        # Parent directories should have been created
+        assert local_path.parent.exists()
+        assert result == local_path
 
 
 class TestGeneratePresignedUrl:

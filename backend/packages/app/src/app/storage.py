@@ -80,40 +80,55 @@ class S3Storage:
             return f"{prefix}/{filename}"
         return f"{prefix}{filename}"
 
-    def upload_bytes(self, data: bytes, s3_key: str) -> None:
+    def upload_bytes(self, data: bytes, s3_key: str) -> str:
         """Upload bytes data to S3.
 
         Args:
             data: The bytes data to upload.
             s3_key: The full S3 key (including user prefix).
+
+        Returns:
+            The S3 URI of the uploaded object (e.g., "s3://bucket/key").
         """
         self.client.put_object(
             Bucket=self.bucket_name,
             Key=s3_key,
             Body=data
         )
+        return f"s3://{self.bucket_name}/{s3_key}"
 
-    def upload_file(self, local_path: Union[str, Path], s3_key: str) -> None:
+    def upload_file(self, local_path: Union[str, Path], s3_key: str) -> str:
         """Upload a file to S3.
 
         Args:
             local_path: Path to the local file to upload.
             s3_key: The full S3 key (including user prefix).
+
+        Returns:
+            The S3 URI of the uploaded object (e.g., "s3://bucket/key").
         """
         # Convert Path to string for boto3
         path_str = str(local_path) if isinstance(local_path, Path) else local_path
         self.client.upload_file(path_str, self.bucket_name, s3_key)
+        return f"s3://{self.bucket_name}/{s3_key}"
 
-    def download_file(self, s3_key: str, local_path: Union[str, Path]) -> None:
+    def download_file(self, s3_key: str, local_path: Union[str, Path]) -> Path:
         """Download a file from S3.
 
         Args:
             s3_key: The full S3 key (including user prefix).
             local_path: Path where the file should be saved locally.
+
+        Returns:
+            The Path object of the downloaded file.
         """
+        # Ensure local_path is a Path object
+        local = Path(local_path) if not isinstance(local_path, Path) else local_path
+        # Create parent directories if they don't exist
+        local.parent.mkdir(parents=True, exist_ok=True)
         # Convert Path to string for boto3
-        path_str = str(local_path) if isinstance(local_path, Path) else local_path
-        self.client.download_file(self.bucket_name, s3_key, path_str)
+        self.client.download_file(self.bucket_name, s3_key, str(local))
+        return local
 
     def generate_presigned_url(self, s3_key: str, expires_in: int = 3600) -> str:
         """Generate a presigned URL for accessing an S3 object.
