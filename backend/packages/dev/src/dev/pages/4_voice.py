@@ -20,6 +20,12 @@ def main():
 
     story_data = None
 
+    run_id = st.session_state.get('run_id')
+    if run_id:
+        st.info(f"Using Run ID: `{run_id}`")
+    else:
+        st.warning("No run_id found. Run Vision stage first.")
+
     if 'story_result' in st.session_state:
         story_data = st.session_state['story_result']
         st.success("Using stored story result")
@@ -42,11 +48,12 @@ def main():
     st.divider()
 
     # Generate button
-    if story_data:
+    if story_data and run_id:
         if st.button("🔊 Generate Audio", type="primary"):
             with st.spinner("Generating audio..."):
                 try:
                     payload = {
+                        "run_id": run_id,
                         "story": story_data,
                         "voice_type": voice_type,
                     }
@@ -85,6 +92,8 @@ def main():
 
                 except requests.exceptions.RequestException as e:
                     st.error(f"Request failed: {e}")
+    elif not run_id:
+        st.info("Run Vision stage first to generate a run_id.")
 
 
 if __name__ == "__main__":

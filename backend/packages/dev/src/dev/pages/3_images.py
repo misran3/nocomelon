@@ -23,6 +23,12 @@ def main():
     story_data = None
     drawing_data = None
 
+    run_id = st.session_state.get('run_id')
+    if run_id:
+        st.info(f"Using Run ID: `{run_id}`")
+    else:
+        st.warning("No run_id found. Run Vision stage first.")
+
     with col1:
         st.markdown("**Story Script**")
         if 'story_result' in st.session_state:
@@ -61,11 +67,12 @@ def main():
     st.divider()
 
     # Generate button
-    if story_data and drawing_data:
+    if story_data and drawing_data and run_id:
         if st.button("🎨 Generate Images", type="primary"):
             with st.spinner("Generating images (this may take a few minutes)..."):
                 try:
                     payload = {
+                        "run_id": run_id,
                         "story": story_data,
                         "drawing": drawing_data,
                         "style": style,
@@ -104,6 +111,8 @@ def main():
 
                 except requests.exceptions.RequestException as e:
                     st.error(f"Request failed: {e}")
+    elif not run_id:
+        st.info("Run Vision stage first to generate a run_id.")
     else:
         st.info("Load both Story Script and Drawing Analysis to generate images.")
 

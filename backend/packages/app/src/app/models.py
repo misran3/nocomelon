@@ -37,6 +37,12 @@ class DrawingAnalysis(BaseModel):
     colors: list[str] = Field(description="Primary colors used")
 
 
+class VisionResponse(BaseModel):
+    """Response from vision analysis including run_id."""
+    run_id: str
+    drawing: DrawingAnalysis
+
+
 # Stage 2: Story Output
 class Scene(BaseModel):
     """A single scene in the story."""
@@ -123,6 +129,7 @@ class StoryRequest(BaseModel):
 
 class ImagesRequest(BaseModel):
     """Request to generate images."""
+    run_id: str
     story: StoryScript
     drawing: DrawingAnalysis
     style: Style
@@ -130,12 +137,14 @@ class ImagesRequest(BaseModel):
 
 class VoiceRequest(BaseModel):
     """Request to generate voice audio."""
+    run_id: str
     story: StoryScript
     voice_type: VoiceType
 
 
 class VideoRequest(BaseModel):
     """Request to assemble video."""
+    run_id: str
     images: ImageResult
     audio: AudioResult
     music_track: str | None = None

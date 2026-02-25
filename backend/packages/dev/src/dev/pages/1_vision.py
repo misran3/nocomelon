@@ -71,33 +71,36 @@ def main():
 
                     if response.status_code == 200:
                         result = response.json()
-                        st.success("Analysis complete!")
+                        run_id = result['run_id']
+                        drawing = result['drawing']
+                        st.success(f"Analysis complete! Run ID: `{run_id}`")
 
                         # Display results
                         st.subheader("Results")
                         col1, col2 = st.columns(2)
 
                         with col1:
-                            st.markdown(f"**Subject:** {result['subject']}")
-                            st.markdown(f"**Setting:** {result['setting']}")
-                            st.markdown(f"**Mood:** {result['mood']}")
+                            st.markdown(f"**Subject:** {drawing['subject']}")
+                            st.markdown(f"**Setting:** {drawing['setting']}")
+                            st.markdown(f"**Mood:** {drawing['mood']}")
 
                         with col2:
                             st.markdown("**Details:**")
-                            for detail in result['details']:
+                            for detail in drawing['details']:
                                 st.markdown(f"- {detail}")
-                            st.markdown(f"**Colors:** {', '.join(result['colors'])}")
+                            st.markdown(f"**Colors:** {', '.join(drawing['colors'])}")
 
                         # Store in session state
-                        st.session_state['vision_result'] = result
+                        st.session_state['run_id'] = run_id
+                        st.session_state['vision_result'] = drawing
 
                         # JSON output
                         st.subheader("JSON Output")
-                        st.code(json.dumps(result, indent=2), language="json")
+                        st.code(json.dumps(drawing, indent=2), language="json")
 
                         st.download_button(
                             "📋 Copy JSON",
-                            json.dumps(result, indent=2),
+                            json.dumps(drawing, indent=2),
                             file_name="vision_result.json",
                             mime="application/json",
                         )

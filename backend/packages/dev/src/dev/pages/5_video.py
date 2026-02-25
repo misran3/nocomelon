@@ -21,6 +21,12 @@ def main():
     images_data = None
     audio_data = None
 
+    run_id = st.session_state.get('run_id')
+    if run_id:
+        st.info(f"Using Run ID: `{run_id}`")
+    else:
+        st.warning("No run_id found. Run Vision stage first.")
+
     with col1:
         st.markdown("**Images Result**")
         if 'images_result' in st.session_state:
@@ -72,11 +78,12 @@ def main():
     st.divider()
 
     # Assemble button
-    if images_data and audio_data:
+    if images_data and audio_data and run_id:
         if st.button("🎬 Assemble Video", type="primary"):
             with st.spinner("Assembling video..."):
                 try:
                     payload = {
+                        "run_id": run_id,
                         "images": images_data,
                         "audio": audio_data,
                         "music_track": music_track,
@@ -118,6 +125,8 @@ def main():
 
                 except requests.exceptions.RequestException as e:
                     st.error(f"Request failed: {e}")
+    elif not run_id:
+        st.info("Run Vision stage first to generate a run_id.")
     else:
         st.info("Load both Images and Audio results to assemble video.")
 

@@ -15,6 +15,7 @@ from app.models import (
     VoiceRequest,
     VideoRequest,
     DrawingAnalysis,
+    VisionResponse,
     StoryScript,
     ImageResult,
     AudioResult,
@@ -87,11 +88,13 @@ async def status():
     }
 
 
-@app.post("/api/v1/vision/analyze", response_model=DrawingAnalysis)
+@app.post("/api/v1/vision/analyze", response_model=VisionResponse)
 async def api_analyze_drawing(request: VisionRequest):
     """Stage 1: Analyze a drawing."""
     try:
-        return await analyze_drawing(request.image_base64)
+        run_id = uuid.uuid4().hex[:8]
+        drawing = await analyze_drawing(request.image_base64)
+        return VisionResponse(run_id=run_id, drawing=drawing)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -115,12 +118,11 @@ async def api_generate_story(request: StoryRequest):
 async def api_generate_images(request: ImagesRequest):
     """Stage 3: Generate images."""
     try:
-        run_id = uuid.uuid4().hex[:8]
         return await generate_images(
             story=request.story,
             drawing=request.drawing,
             style=request.style,
-            run_id=run_id,
+            run_id=request.run_id,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -130,11 +132,10 @@ async def api_generate_images(request: ImagesRequest):
 async def api_generate_audio(request: VoiceRequest):
     """Stage 4: Generate voice audio."""
     try:
-        run_id = uuid.uuid4().hex[:8]
         return await generate_audio(
             story=request.story,
             voice_type=request.voice_type,
-            run_id=run_id,
+            run_id=request.run_id,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -144,11 +145,10 @@ async def api_generate_audio(request: VoiceRequest):
 async def api_assemble_video(request: VideoRequest):
     """Stage 5: Assemble final video."""
     try:
-        run_id = uuid.uuid4().hex[:8]
         return await assemble_video(
             images=request.images,
             audio=request.audio,
-            run_id=run_id,
+            run_id=request.run_id,
             music_track=request.music_track,
         )
     except Exception as e:
