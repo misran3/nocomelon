@@ -27,7 +27,7 @@ async def _download_to_temp(url: str, suffix: str, temp_dir: str) -> str:
     Returns:
         Path to the downloaded temp file
     """
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         response = await client.get(url)
         response.raise_for_status()
 
