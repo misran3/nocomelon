@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
@@ -30,6 +30,7 @@ export default function PreviewPage() {
   const [isGenerating, setIsGenerating] = useState(true);
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const hasStartedPipeline = useRef(false);
 
   // S3 URL resolution for video playback
   const { url: videoUrl, isLoading: videoUrlLoading } = useS3Url(state.video?.video_key);
@@ -47,6 +48,12 @@ export default function PreviewPage() {
       setIsGenerating(false);
       return;
     }
+
+    // Guard: only start pipeline once
+    if (hasStartedPipeline.current) {
+      return;
+    }
+    hasStartedPipeline.current = true;
 
     async function runPipeline() {
       try {
