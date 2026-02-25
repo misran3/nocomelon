@@ -11,15 +11,13 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 # Set working directory
 WORKDIR /app
 
-# Copy dependency files
-COPY pyproject.toml .
-COPY .python-version .
+# Copy dependency files and source code
+# Note: Source must be present for uv sync since this is an editable package install
+COPY pyproject.toml README.md .python-version ./
+COPY src/ src/
 
 # Install dependencies
 RUN uv sync --no-dev
-
-# Copy application code
-COPY src/ src/
 
 # Create data directory
 RUN mkdir -p /tmp/data
