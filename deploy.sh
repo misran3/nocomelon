@@ -102,18 +102,14 @@ log_info "Authenticating with ECR..."
 aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_URL"
 
 if [ "$SKIP_BUILD" = false ]; then
-    # Build Docker image
-    log_info "Building Docker image..."
+    # Build Docker image for linux/amd64 using buildx (required for ECS Fargate)
+    log_info "Building Docker image for linux/amd64 with buildx..."
     cd "$APP_DIR"
-    docker build -t nocomeleon-app:latest .
-
-    # Tag for ECR
-    log_info "Tagging image for ECR..."
-    docker tag nocomeleon-app:latest "$ECR_URL:latest"
-
-    # Push to ECR
-    log_info "Pushing image to ECR..."
-    docker push "$ECR_URL:latest"
+    docker buildx build \
+        --platform linux/amd64 \
+        --tag "$ECR_URL:latest" \
+        --push \
+        .
 else
     log_warn "Skipping build (--skip-build flag set)"
 fi
