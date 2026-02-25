@@ -3,8 +3,9 @@ import AppHeader from '../components/layout/AppHeader';
 import { StorybookCard } from '../components/library/StorybookCard';
 import { StorybookSheet } from '../components/library/StorybookSheet';
 import { useLibrary } from '../hooks/use-library';
-import { StorybookEntry } from '../types';
+import { LibraryEntry } from '../types';
 import { Button } from '../components/ui/button';
+import { Skeleton } from '../components/ui/skeleton';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -12,15 +13,46 @@ import { CONTENT_WIDTH } from '../lib/utils';
 
 export default function LibraryPage() {
   const navigate = useNavigate();
-  const { library, removeStorybook } = useLibrary();
-  const [selectedStory, setSelectedStory] = useState<StorybookEntry | null>(null);
+  const { library, isLoading, error, removeStorybook } = useLibrary();
+  const [selectedStory, setSelectedStory] = useState<LibraryEntry | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     document.title = 'NoComelon | Library';
   }, []);
 
-  const handleStoryClick = (story: StorybookEntry) => {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <AppHeader />
+        <main className={`flex-1 pt-20 px-4 pb-24 ${CONTENT_WIDTH} w-full`}>
+          <div className="flex items-center justify-between mb-6">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-6 w-20 rounded-full" />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="aspect-[3/4] rounded-xl" />
+            ))}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <AppHeader />
+        <main className={`flex-1 pt-20 px-4 pb-24 ${CONTENT_WIDTH} w-full flex flex-col items-center justify-center`}>
+          <p className="text-destructive mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </main>
+      </div>
+    );
+  }
+
+  const handleStoryClick = (story: LibraryEntry) => {
     setSelectedStory(story);
     setSheetOpen(true);
   };
@@ -81,10 +113,10 @@ export default function LibraryPage() {
         storybook={selectedStory} 
         open={sheetOpen} 
         onOpenChange={setSheetOpen} 
-        onDelete={(id) => { 
-          removeStorybook(id); 
-          setSheetOpen(false); 
-          toast.success("Storybook deleted");
+        onDelete={async (id) => {
+          await removeStorybook(id);
+          setSheetOpen(false);
+          toast.success('Storybook deleted');
         }}
       />
     </div>
