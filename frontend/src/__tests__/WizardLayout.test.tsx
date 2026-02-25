@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import WizardLayout from '../components/layout/WizardLayout';
 import { AuthProvider } from '../hooks/use-auth';
@@ -16,19 +16,22 @@ vi.mock('react-router', async () => {
 
 // Mock aws-amplify/auth to avoid real auth calls
 vi.mock('aws-amplify/auth', () => ({
-  getCurrentUser: vi.fn().mockRejectedValue(new Error('No user')),
-  signIn: vi.fn(),
-  signOut: vi.fn(),
-  confirmSignIn: vi.fn(),
+  getCurrentUser: vi.fn().mockImplementation(() => Promise.reject(new Error('No user'))),
+  signIn: vi.fn().mockResolvedValue({ isSignedIn: false }),
+  signOut: vi.fn().mockResolvedValue(undefined),
+  confirmSignIn: vi.fn().mockResolvedValue({ isSignedIn: false }),
 }));
 
 // Helper to wrap component with MemoryRouter and AuthProvider
-function renderWithRouter(ui: React.ReactElement) {
-  return render(
+async function renderWithRouter(ui: React.ReactElement) {
+  const result = render(
     <MemoryRouter>
       <AuthProvider>{ui}</AuthProvider>
     </MemoryRouter>
   );
+  // Wait for auth state to settle
+  await waitFor(() => {});
+  return result;
 }
 
 describe('WizardLayout', () => {
@@ -37,8 +40,8 @@ describe('WizardLayout', () => {
   });
 
   describe('rendering', () => {
-    it('renders children correctly', () => {
-      renderWithRouter(
+    it('renders children correctly', async () => {
+      await renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -52,8 +55,8 @@ describe('WizardLayout', () => {
       expect(screen.getByText('Test Content')).toBeInTheDocument();
     });
 
-    it('renders action button with correct label', () => {
-      renderWithRouter(
+    it('renders action button with correct label', async () => {
+      await renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Next Step"
@@ -68,8 +71,8 @@ describe('WizardLayout', () => {
   });
 
   describe('progress bar visibility', () => {
-    it('shows progress bar when showProgress is true', () => {
-      renderWithRouter(
+    it('shows progress bar when showProgress is true', async () => {
+      await renderWithRouter(
         <WizardLayout
           currentStep={2}
           actionLabel="Continue"
@@ -87,8 +90,8 @@ describe('WizardLayout', () => {
       expect(stepButtons.length).toBeGreaterThan(0);
     });
 
-    it('shows progress bar by default (showProgress defaults to true)', () => {
-      renderWithRouter(
+    it('shows progress bar by default (showProgress defaults to true)', async () => {
+      await renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -105,8 +108,8 @@ describe('WizardLayout', () => {
       expect(stepButtons.length).toBeGreaterThan(0);
     });
 
-    it('hides progress bar when showProgress is false', () => {
-      renderWithRouter(
+    it('hides progress bar when showProgress is false', async () => {
+      await renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -126,8 +129,8 @@ describe('WizardLayout', () => {
   });
 
   describe('action button', () => {
-    it('action button is enabled by default', () => {
-      renderWithRouter(
+    it('action button is enabled by default', async () => {
+      await renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -141,8 +144,8 @@ describe('WizardLayout', () => {
       expect(actionButton).not.toBeDisabled();
     });
 
-    it('action button is disabled when actionDisabled is true', () => {
-      renderWithRouter(
+    it('action button is disabled when actionDisabled is true', async () => {
+      await renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -157,8 +160,8 @@ describe('WizardLayout', () => {
       expect(actionButton).toBeDisabled();
     });
 
-    it('action button is disabled when actionLoading is true', () => {
-      renderWithRouter(
+    it('action button is disabled when actionLoading is true', async () => {
+      await renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -174,9 +177,9 @@ describe('WizardLayout', () => {
       expect(actionButton).toBeDisabled();
     });
 
-    it('calls onAction when action button is clicked', () => {
+    it('calls onAction when action button is clicked', async () => {
       const onAction = vi.fn();
-      renderWithRouter(
+      await renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -192,9 +195,9 @@ describe('WizardLayout', () => {
       expect(onAction).toHaveBeenCalledTimes(1);
     });
 
-    it('does not call onAction when button is disabled', () => {
+    it('does not call onAction when button is disabled', async () => {
       const onAction = vi.fn();
-      renderWithRouter(
+      await renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -213,8 +216,8 @@ describe('WizardLayout', () => {
   });
 
   describe('step navigation', () => {
-    it('navigates to correct route when completed step is clicked', () => {
-      renderWithRouter(
+    it('navigates to correct route when completed step is clicked', async () => {
+      await renderWithRouter(
         <WizardLayout currentStep={3} actionLabel="Next" onAction={vi.fn()}>
           <div>Content</div>
         </WizardLayout>
@@ -228,8 +231,8 @@ describe('WizardLayout', () => {
   });
 
   describe('loading state', () => {
-    it('shows loading spinner and "Please wait" text when actionLoading is true', () => {
-      renderWithRouter(
+    it('shows loading spinner and "Please wait" text when actionLoading is true', async () => {
+      await renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Submit"
@@ -244,8 +247,8 @@ describe('WizardLayout', () => {
       expect(screen.queryByText('Submit')).not.toBeInTheDocument();
     });
 
-    it('shows action label when not loading', () => {
-      renderWithRouter(
+    it('shows action label when not loading', async () => {
+      await renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Submit"
