@@ -1,5 +1,5 @@
 import { Menu, Library, LogOut } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Button } from "../ui/button";
 import { CONTENT_WIDTH } from "../../lib/utils";
 import {
@@ -8,11 +8,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { toast } from "sonner";
+import { useAuth } from "../../hooks/use-auth";
 
 export default function AppHeader() {
-  const handleSignOut = () => {
-    toast("Sign out coming soon");
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await logout();
+    navigate('/sign-in');
   };
 
   return (
