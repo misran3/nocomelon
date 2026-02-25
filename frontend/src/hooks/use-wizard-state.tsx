@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { WizardState, DrawingAnalysis, StoryScript, VideoResult } from '../types/index';
 
 interface WizardContextType {
@@ -65,51 +65,51 @@ export function WizardProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state]);
 
-  const setRunId = (run_id: string | null) => {
+  const setRunId = useCallback((run_id: string | null) => {
     setState((prev) => ({ ...prev, run_id }));
-  };
+  }, []);
 
-  const setDrawing = (drawing: File | null) => {
+  const setDrawing = useCallback((drawing: File | null) => {
     setState((prev) => ({ ...prev, drawing }));
-  };
+  }, []);
 
-  const setAnalysis = (analysis: DrawingAnalysis | null) => {
+  const setAnalysis = useCallback((analysis: DrawingAnalysis | null) => {
     setState((prev) => ({ ...prev, analysis }));
-  };
+  }, []);
 
-  const setCustomization = (customization: Partial<WizardState['customization']>) => {
+  const setCustomization = useCallback((customization: Partial<WizardState['customization']>) => {
     setState((prev) => ({
       ...prev,
       customization: { ...prev.customization, ...customization },
     }));
-  };
+  }, []);
 
-  const setScript = (script: StoryScript | null) => {
+  const setScript = useCallback((script: StoryScript | null) => {
     setState((prev) => ({ ...prev, script }));
-  };
+  }, []);
 
-  const setVideo = (video: VideoResult | null) => {
+  const setVideo = useCallback((video: VideoResult | null) => {
     setState((prev) => ({ ...prev, video }));
-  };
+  }, []);
 
-  const resetWizard = () => {
+  const resetWizard = useCallback(() => {
     setState(initialState);
     localStorage.removeItem('nocomelon-wizard-state');
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    state,
+    setRunId,
+    setDrawing,
+    setAnalysis,
+    setCustomization,
+    setScript,
+    setVideo,
+    resetWizard,
+  }), [state, setRunId, setDrawing, setAnalysis, setCustomization, setScript, setVideo, resetWizard]);
 
   return (
-    <WizardContext.Provider
-      value={{
-        state,
-        setRunId,
-        setDrawing,
-        setAnalysis,
-        setCustomization,
-        setScript,
-        setVideo,
-        resetWizard,
-      }}
-    >
+    <WizardContext.Provider value={contextValue}>
       {children}
     </WizardContext.Provider>
   );
