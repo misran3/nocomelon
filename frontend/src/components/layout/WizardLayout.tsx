@@ -49,7 +49,10 @@ export default function WizardLayout({
         </div>
       )}
 
-      <main 
+      {/* Main content padding accounts for fixed elements:
+          Mobile: 116px = AppHeader(56px) + ProgressBar(~60px)
+          Desktop: 140px = AppHeader(56px) + ProgressBar(~84px with labels) */}
+      <main
         className={cn("flex-1 pb-24 overflow-y-auto", showProgress ? "pt-[116px] md:pt-[140px]" : "pt-16")}
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
