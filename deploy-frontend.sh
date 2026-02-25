@@ -19,7 +19,7 @@ fi
 
 # Fetch environment variables from Terraform outputs
 echo "Fetching environment variables from Terraform..."
-export VITE_API_URL="http://$(terraform -chdir=$INFRA_DIR output -raw alb_dns_name)"
+export VITE_API_URL="$(terraform -chdir=$INFRA_DIR output -raw api_gateway_url)"
 export VITE_COGNITO_USER_POOL_ID=$(terraform -chdir=$INFRA_DIR output -raw cognito_user_pool_id)
 export VITE_COGNITO_CLIENT_ID=$(terraform -chdir=$INFRA_DIR output -raw cognito_client_id)
 export VITE_COGNITO_IDENTITY_POOL_ID=$(terraform -chdir=$INFRA_DIR output -raw cognito_identity_pool_id)
