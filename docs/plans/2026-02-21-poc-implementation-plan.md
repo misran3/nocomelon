@@ -319,11 +319,16 @@ import os
 from pathlib import Path
 from functools import lru_cache
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
 
     # API Keys
     openai_api_key: str
@@ -352,10 +357,6 @@ class Settings(BaseSettings):
     @property
     def samples_dir(self) -> Path:
         return self.data_dir / "samples"
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 
 @lru_cache
@@ -414,7 +415,7 @@ Create `backend/packages/app/src/app/stages/vision.py`:
 """Stage 1: Analyze a child's drawing using vision AI."""
 
 import base64
-from pydantic_ai import Agent
+from pydantic_ai import Agent, BinaryContent
 
 from app.models import DrawingAnalysis
 from app.config import get_settings
@@ -423,7 +424,7 @@ from app.config import get_settings
 # Create the vision agent
 vision_agent = Agent(
     "openai:gpt-4o",
-    result_type=DrawingAnalysis,
+    output_type=DrawingAnalysis,
     system_prompt="""You are analyzing a child's drawing. Your job is to identify:
 1. The main subject (character, animal, object)
 2. The setting or background
@@ -451,25 +452,18 @@ async def analyze_drawing(image_base64: str) -> DrawingAnalysis:
     """
     settings = get_settings()
 
-    # Construct the message with the image
+    # Decode base64 to bytes for BinaryContent
+    image_bytes = base64.b64decode(image_base64)
+
+    # Construct the message with the image using pydantic-ai's BinaryContent
     result = await vision_agent.run(
         [
-            {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": "image/png",
-                    "data": image_base64,
-                },
-            },
-            {
-                "type": "text",
-                "text": "Please analyze this child's drawing."
-            },
+            BinaryContent(data=image_bytes, media_type="image/png"),
+            "Please analyze this child's drawing.",
         ]
     )
 
-    return result.data
+    return result.output
 ```
 
 **Step 3: Create test directory and write test**
@@ -582,7 +576,7 @@ def get_age_guideline(age: int) -> str:
 # Create the story agent
 story_agent = Agent(
     "openai:gpt-4o",
-    result_type=StoryScript,
+    output_type=StoryScript,
     system_prompt="""You are a children's story writer. Generate a story based on the drawing
 and theme provided.
 
@@ -643,7 +637,7 @@ async def generate_story(
     prompt = "\n".join(prompt_parts)
 
     result = await story_agent.run(prompt)
-    return result.data
+    return result.output
 ```
 
 **Step 2: Update stages __init__.py**

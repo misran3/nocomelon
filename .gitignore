@@ -217,3 +217,11 @@ __marimo__/
 
 # Git worktrees
 .worktrees
+
+# NoComelon generated data
+backend/data/images/*
+backend/data/audio/*
+backend/data/videos/*
+backend/data/checkpoints/*
+!backend/data/*/.gitkeep
+.DS_Store
