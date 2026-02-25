@@ -518,3 +518,24 @@ resource "aws_ecs_service" "app" {
 
   depends_on = [aws_lb_listener.app]
 }
+
+# ------------------------------------------------------------------------------
+# Amplify Hosting (Static Frontend)
+# ------------------------------------------------------------------------------
+resource "aws_amplify_app" "frontend" {
+  name     = "${var.app_name}-frontend"
+  platform = "WEB"
+
+  # SPA redirect: all routes → index.html (except static assets)
+  custom_rule {
+    source = "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json|webp)$)([^.]+$)/>"
+    target = "/index.html"
+    status = "200"
+  }
+}
+
+resource "aws_amplify_branch" "main" {
+  app_id      = aws_amplify_app.frontend.id
+  branch_name = "main"
+  stage       = "PRODUCTION"
+}
