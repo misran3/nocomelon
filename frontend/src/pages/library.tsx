@@ -1,0 +1,91 @@
+import React, { useState, useEffect } from 'react';
+import AppHeader from '../components/layout/AppHeader';
+import { StorybookCard } from '../components/library/StorybookCard';
+import { StorybookSheet } from '../components/library/StorybookSheet';
+import { useLibrary } from '../hooks/use-library';
+import { StorybookEntry } from '../types';
+import { Button } from '../components/ui/button';
+import { Plus } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
+
+export default function LibraryPage() {
+  const navigate = useNavigate();
+  const { library, removeStorybook } = useLibrary();
+  const [selectedStory, setSelectedStory] = useState<StorybookEntry | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  useEffect(() => {
+    document.title = 'NoComelon | Library';
+  }, []);
+
+  const handleStoryClick = (story: StorybookEntry) => {
+    setSelectedStory(story);
+    setSheetOpen(true);
+  };
+
+  const handleCreateNew = () => {
+    navigate('/upload');
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <AppHeader />
+      
+      <main className="flex-1 pt-20 px-4 pb-24 max-w-md mx-auto w-full">
+        {library.length > 0 ? (
+          <>
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold text-foreground">Your Storybooks</h1>
+              <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold">
+                {library.length} stories
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {library.map((story) => (
+                <StorybookCard 
+                  key={story.id} 
+                  storybook={story} 
+                  onClick={() => handleStoryClick(story)} 
+                />
+              ))}
+              
+              <button
+                onClick={handleCreateNew}
+                className="aspect-[3/4] rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-colors flex flex-col items-center justify-center gap-2 group"
+              >
+                <div className="w-12 h-12 rounded-full bg-secondary/10 text-secondary-foreground flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Plus className="w-6 h-6" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Create New</span>
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+            <div className="text-7xl mb-4">📚✨</div>
+            <h2 className="text-xl font-bold mt-4">No storybooks yet</h2>
+            <p className="text-muted-foreground text-sm mt-2">
+              Upload a drawing to create your first story
+            </p>
+            <Button onClick={handleCreateNew} className="mt-6 w-full">
+              Create Story
+            </Button>
+          </div>
+        )}
+      </main>
+
+      <StorybookSheet 
+        storybook={selectedStory} 
+        open={sheetOpen} 
+        onOpenChange={setSheetOpen} 
+        onDelete={(id) => { 
+          removeStorybook(id); 
+          setSheetOpen(false); 
+          toast.success("Storybook deleted");
+        }}
+      />
+    </div>
+  );
+}
