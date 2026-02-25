@@ -1,36 +1,39 @@
-import { cn } from '../../lib/utils';
+import { Slider } from '../ui/slider';
 
 interface AgePickerProps {
   value: number | null;
   onChange: (age: number) => void;
-  min?: number; // default 2
-  max?: number; // default 9
+  min?: number;
+  max?: number;
 }
 
-export default function AgePicker({ 
-  value, 
-  onChange, 
-  min = 2, 
-  max = 9 
+export default function AgePicker({
+  value,
+  onChange,
+  min = 2,
+  max = 9
 }: AgePickerProps) {
-  const ages = Array.from({ length: max - min + 1 }, (_, i) => i + min);
+  const currentValue = value ?? min;
 
   return (
-    <div className="flex flex-row gap-2">
-      {ages.map((age) => (
-        <button
-          key={age}
-          onClick={() => onChange(age)}
-          className={cn(
-            "w-10 h-10 rounded-lg text-sm font-medium transition-all flex items-center justify-center",
-            value === age
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-          )}
-        >
-          {age}
-        </button>
-      ))}
+    <div className="space-y-4">
+      <div className="flex items-center justify-center">
+        <span className="text-4xl font-bold text-primary">{currentValue}</span>
+        <span className="text-lg text-muted-foreground ml-2">years old</span>
+      </div>
+      <div className="px-2">
+        <Slider
+          value={[currentValue]}
+          onValueChange={([val]) => onChange(val)}
+          min={min}
+          max={max}
+          step={1}
+        />
+        <div className="flex justify-between mt-2 text-sm text-muted-foreground">
+          <span>{min}</span>
+          <span>{max}</span>
+        </div>
+      </div>
     </div>
   );
 }
