@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     aws_region: str = "us-east-1"
     s3_bucket_name: str | None = None
 
+    # DynamoDB Tables
+    library_table_name: str = "nocomeleon-library"
+    checkpoints_table_name: str = "nocomeleon-checkpoints"
+
     # Paths
     data_dir: Path = Path("./data")
 
