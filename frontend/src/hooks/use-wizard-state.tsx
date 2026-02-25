@@ -3,6 +3,7 @@ import { WizardState, DrawingAnalysis, StoryScript, VideoResult } from '../types
 
 interface WizardContextType {
   state: WizardState;
+  setRunId: (runId: string | null) => void;
   setDrawing: (drawing: File | null) => void;
   setAnalysis: (analysis: DrawingAnalysis | null) => void;
   setCustomization: (customization: Partial<WizardState['customization']>) => void;
@@ -12,6 +13,7 @@ interface WizardContextType {
 }
 
 const initialState: WizardState = {
+  run_id: null,
   drawing: null,
   analysis: null,
   customization: {
@@ -63,6 +65,10 @@ export function WizardProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state]);
 
+  const setRunId = (run_id: string | null) => {
+    setState((prev) => ({ ...prev, run_id }));
+  };
+
   const setDrawing = (drawing: File | null) => {
     setState((prev) => ({ ...prev, drawing }));
   };
@@ -95,6 +101,7 @@ export function WizardProvider({ children }: { children: React.ReactNode }) {
     <WizardContext.Provider
       value={{
         state,
+        setRunId,
         setDrawing,
         setAnalysis,
         setCustomization,
