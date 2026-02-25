@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useWizardState } from '../hooks/use-wizard-state';
+import { useAuth } from '../hooks/use-auth';
 import WizardLayout from '../components/layout/WizardLayout';
 import { analyzeDrawing } from '../api';
 import { Input } from '../components/ui/input';
@@ -11,6 +12,7 @@ import { toast } from 'sonner';
 
 export default function RecognizePage() {
   const { state, setAnalysis, setRunId } = useWizardState();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [analyzing, setAnalyzing] = useState(true);
   const [formData, setFormData] = useState({
@@ -48,7 +50,7 @@ export default function RecognizePage() {
         reader.onloadend = async () => {
           try {
             const base64 = (reader.result as string).split(',')[1];
-            const response = await analyzeDrawing(base64);
+            const response = await analyzeDrawing(base64, user?.userId);
             setRunId(response.run_id);
             setFormData({
               subject: response.drawing.subject,

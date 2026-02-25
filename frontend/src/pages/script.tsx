@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { Skeleton } from '../components/ui/skeleton';
 import { useWizardState } from '../hooks/use-wizard-state';
+import { useAuth } from '../hooks/use-auth';
 import WizardLayout from '../components/layout/WizardLayout';
 import SceneEditor from '../components/script/SceneEditor';
 import { generateStory } from '../api';
@@ -12,6 +13,7 @@ import { Scene, StoryScript } from '../types';
 
 export default function ScriptPage() {
   const { state, setScript } = useWizardState();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -27,8 +29,10 @@ export default function ScriptPage() {
       voice_type: state.customization.voice,
       child_age: state.customization.age,
       personal_context: state.customization.personalContext || undefined,
+      user_id: user?.userId,
+      run_id: state.run_id || undefined,
     };
-  }, [state.analysis, state.customization]);
+  }, [state.analysis, state.customization, state.run_id, user?.userId]);
 
   const doGenerateStory = useCallback(async () => {
     const request = generateStoryRequest();
