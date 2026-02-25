@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
+from app.database import get_database
 from app.models import (
     VisionRequest,
     StoryRequest,
@@ -20,6 +21,7 @@ from app.models import (
     ImageResult,
     AudioResult,
     VideoResult,
+    LibraryEntry,
 )
 from app.stages import (
     analyze_drawing,
@@ -156,3 +158,28 @@ async def api_assemble_video(request: VideoRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# Library endpoints
+@app.get("/api/v1/library", response_model=list[LibraryEntry])
+async def api_get_library(user_id: str):
+    """Get user's saved storybooks."""
+    db = get_database()
+    items = db.get_library(user_id)
+    return [LibraryEntry(**item) for item in items]
+
+
+@app.post("/api/v1/library", response_model=LibraryEntry)
+async def api_save_to_library(entry: LibraryEntry, user_id: str):
+    """Save storybook to library."""
+    db = get_database()
+    db.save_storybook(user_id, entry.model_dump())
+    return entry
+
+
+@app.delete("/api/v1/library/{storybook_id}")
+async def api_delete_from_library(storybook_id: str, user_id: str):
+    """Delete storybook from library."""
+    db = get_database()
+    db.delete_storybook(user_id, storybook_id)
+    return {"status": "deleted"}
