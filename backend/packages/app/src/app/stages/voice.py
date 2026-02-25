@@ -1,7 +1,5 @@
 """Stage 4: Generate voice narration using ElevenLabs."""
 
-import uuid
-
 from elevenlabs import AsyncElevenLabs
 from elevenlabs.types import VoiceSettings
 import aiofiles
@@ -26,6 +24,7 @@ VOICE_IDS = {
 async def generate_audio(
     story: StoryScript,
     voice_type: VoiceType,
+    run_id: str,
 ) -> AudioResult:
     """
     Generate audio narration for each scene.
@@ -42,9 +41,6 @@ async def generate_audio(
 
     # Ensure output directory exists
     settings.audio_dir.mkdir(parents=True, exist_ok=True)
-
-    # Generate unique run ID
-    run_id = uuid.uuid4().hex[:8]
 
     audio_files = []
     total_duration = 0.0

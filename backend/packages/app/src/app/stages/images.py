@@ -1,7 +1,5 @@
 """Stage 3: Generate images for each scene using DALL-E 3."""
 
-import uuid
-
 from openai import AsyncOpenAI
 import aiofiles
 import httpx
@@ -29,6 +27,7 @@ async def generate_images(
     story: StoryScript,
     drawing: DrawingAnalysis,
     style: Style,
+    run_id: str,
 ) -> ImageResult:
     """
     Generate images for each scene in the story.
@@ -46,9 +45,6 @@ async def generate_images(
 
     # Ensure output directory exists
     settings.images_dir.mkdir(parents=True, exist_ok=True)
-
-    # Generate unique run ID
-    run_id = uuid.uuid4().hex[:8]
 
     images = []
     style_prompt = STYLE_PROMPTS[style]

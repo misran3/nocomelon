@@ -1,6 +1,5 @@
 """Stage 5: Assemble final video using FFmpeg."""
 
-import uuid
 import subprocess
 from pathlib import Path
 import tempfile
@@ -16,6 +15,7 @@ from app.config import get_settings
 async def assemble_video(
     images: ImageResult,
     audio: AudioResult,
+    run_id: str,
     music_track: str | None = None,
 ) -> VideoResult:
     """
@@ -34,8 +34,6 @@ async def assemble_video(
     # Ensure output directory exists
     settings.videos_dir.mkdir(parents=True, exist_ok=True)
 
-    # Generate unique run ID
-    run_id = uuid.uuid4().hex[:8]
     output_path = settings.videos_dir / f"{run_id}_final.mp4"
 
     # Create concat file for images with durations
