@@ -54,8 +54,8 @@ async def generate_audio(
         # Generate audio for this scene
         audio_path = settings.audio_dir / f"{run_id}_scene_{scene.number}.mp3"
 
-        # Generate the audio
-        audio_generator = await client.text_to_speech.convert(
+        # Generate the audio (returns async generator, not coroutine)
+        audio_generator = client.text_to_speech.convert(
             voice_id=voice_id,
             text=scene.text,
             model_id="eleven_turbo_v2_5",
