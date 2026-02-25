@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     openai_api_key: str
     elevenlabs_api_key: str
 
+    # AWS/S3 Configuration
+    aws_region: str = "us-east-1"
+    s3_bucket_name: str | None = None
+
     # Paths
     data_dir: Path = Path("./data")
 
@@ -41,6 +45,22 @@ class Settings(BaseSettings):
     @property
     def samples_dir(self) -> Path:
         return self.data_dir / "samples"
+
+    # S3 Storage
+    @property
+    def use_s3(self) -> bool:
+        """Return True if S3 storage is configured."""
+        return self.s3_bucket_name is not None
+
+    def get_storage(self):
+        """Get S3Storage instance if configured."""
+        if not self.use_s3:
+            return None
+        from app.storage import S3Storage
+        return S3Storage(
+            bucket_name=self.s3_bucket_name,
+            region=self.aws_region
+        )
 
 
 @lru_cache
