@@ -77,8 +77,8 @@ Child-friendly, safe for young children, no scary elements."""
         # Upload to S3 or save locally
         if storage is not None:
             s3_key = storage.build_s3_key(user_id, "images", filename)
-            await storage.upload_bytes(image_bytes, s3_key, content_type="image/png")
-            image_location = await storage.get_presigned_url(s3_key)
+            storage.upload_bytes(image_bytes, s3_key)
+            image_location = storage.generate_presigned_url(s3_key)
         else:
             # Save locally (development mode)
             settings.images_dir.mkdir(parents=True, exist_ok=True)
