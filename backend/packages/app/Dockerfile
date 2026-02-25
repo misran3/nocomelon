@@ -16,7 +16,7 @@ COPY pyproject.toml .
 COPY .python-version .
 
 # Install dependencies
-RUN uv sync --no-dev --frozen
+RUN uv sync --no-dev
 
 # Copy application code
 COPY src/ src/
