@@ -4,7 +4,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import AppHeader from './AppHeader';
 import { ProgressBar } from './ProgressBar';
 import { Button } from '../ui/button';
-import { cn } from '../../lib/utils';
+import { cn, CONTENT_WIDTH } from '../../lib/utils';
 
 interface WizardLayoutProps {
   children: React.ReactNode;
@@ -43,7 +43,7 @@ export default function WizardLayout({
       
       {showProgress && (
         <div className="fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-3 border-b">
-           <div className="max-w-md mx-auto px-4">
+           <div className={`${CONTENT_WIDTH} px-4`}>
              <ProgressBar currentStep={currentStep} totalSteps={6} />
            </div>
         </div>
@@ -53,7 +53,7 @@ export default function WizardLayout({
         className={cn("flex-1 pb-24 overflow-y-auto", showProgress ? "pt-[108px]" : "pt-16")}
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
-        <div className="max-w-md mx-auto px-4">
+        <div className={`${CONTENT_WIDTH} px-4`}>
           {children}
         </div>
       </main>
@@ -62,7 +62,7 @@ export default function WizardLayout({
         className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-md z-50"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="max-w-md mx-auto px-4 py-3 flex gap-3">
+        <div className={`${CONTENT_WIDTH} px-4 py-3 flex gap-3`}>
           {onBack && (
             <Button
               variant="ghost"
