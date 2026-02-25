@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../components/ui/button';
 import { RefreshCw } from 'lucide-react';
@@ -16,6 +16,7 @@ export default function ScriptPage() {
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
     document.title = 'NoComelon | Script';
@@ -23,6 +24,16 @@ export default function ScriptPage() {
       navigate('/customize', { replace: true });
       return;
     }
+
+    // Guard: only fetch once, or if script already exists
+    if (hasFetched.current || state.script) {
+      if (state.script) {
+        setScenes(state.script.scenes);
+        setIsLoading(false);
+      }
+      return;
+    }
+    hasFetched.current = true;
 
     async function fetchStory() {
       try {
@@ -44,7 +55,7 @@ export default function ScriptPage() {
     }
 
     fetchStory();
-  }, [state.analysis, state.customization, navigate, setScript]);
+  }, [state.analysis, state.customization, state.script, navigate, setScript]);
 
   const handleRegenerate = async () => {
     setIsRegenerating(true);
