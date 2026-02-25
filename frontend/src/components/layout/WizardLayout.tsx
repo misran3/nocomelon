@@ -42,7 +42,7 @@ export default function WizardLayout({
       <AppHeader />
       
       {showProgress && (
-        <div className="fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-3 border-b">
+        <div className="fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-3 md:py-4 border-b">
            <div className={`${CONTENT_WIDTH} px-4`}>
              <ProgressBar currentStep={currentStep} totalSteps={6} />
            </div>
@@ -50,7 +50,7 @@ export default function WizardLayout({
       )}
 
       <main 
-        className={cn("flex-1 pb-24 overflow-y-auto", showProgress ? "pt-[108px]" : "pt-16")}
+        className={cn("flex-1 pb-24 overflow-y-auto", showProgress ? "pt-[116px] md:pt-[140px]" : "pt-16")}
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         <div className={`${CONTENT_WIDTH} px-4`}>
