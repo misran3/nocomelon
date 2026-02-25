@@ -80,3 +80,15 @@ export const MOCK_LIBRARY: StorybookEntry[] = [
     createdAt: new Date('2023-08-05')
   }
 ];
+
+/**
+ * Step labels for the wizard progress bar
+ */
+export const STEP_LABELS = [
+  'Upload',
+  'Recognize',
+  'Customize',
+  'Script',
+  'Preview',
+  'Save'
+] as const;
