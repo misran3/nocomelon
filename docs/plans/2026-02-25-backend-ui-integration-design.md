@@ -70,6 +70,69 @@ Frontend uses Amplify Storage `getUrl()` with Cognito credentials to access S3.
 
 ## Backend Changes
 
+### New DynamoDB Module
+
+```python
+# app/database.py
+import boto3
+from functools import lru_cache
+from datetime import datetime, timezone
+from app.config import get_settings
+
+
+class Database:
+    def __init__(self):
+        settings = get_settings()
+        self.dynamodb = boto3.resource('dynamodb', region_name=settings.aws_region)
+        self.library_table = self.dynamodb.Table(settings.library_table_name)
+        self.checkpoints_table = self.dynamodb.Table(settings.checkpoints_table_name)
+
+    # Library methods
+    def get_library(self, user_id: str) -> list[dict]:
+        response = self.library_table.query(
+            KeyConditionExpression="user_id = :uid",
+            ExpressionAttributeValues={":uid": user_id}
+        )
+        return response.get("Items", [])
+
+    def save_storybook(self, user_id: str, entry: dict) -> None:
+        self.library_table.put_item(Item={"user_id": user_id, **entry})
+
+    def delete_storybook(self, user_id: str, id: str) -> None:
+        self.library_table.delete_item(Key={"user_id": user_id, "id": id})
+
+    # Checkpoint methods
+    def get_checkpoint(self, user_id: str, run_id: str) -> dict | None:
+        response = self.checkpoints_table.get_item(
+            Key={"user_id": user_id, "run_id": run_id}
+        )
+        return response.get("Item")
+
+    def save_checkpoint(self, user_id: str, run_id: str, data: dict) -> None:
+        ttl = int((datetime.now(timezone.utc).timestamp()) + 7 * 24 * 3600)
+        self.checkpoints_table.put_item(Item={
+            "user_id": user_id,
+            "run_id": run_id,
+            "ttl": ttl,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            **data
+        })
+
+
+@lru_cache
+def get_database() -> Database:
+    """Get cached Database instance (singleton)."""
+    return Database()
+```
+
+### New Config Variables
+
+```python
+# app/config.py (additions)
+library_table_name: str = "nocomeleon-library"
+checkpoints_table_name: str = "nocomeleon-checkpoints"
+```
+
 ### New Endpoint
 
 `POST /api/v1/pipeline/generate`
@@ -92,6 +155,32 @@ class PipelineRequest(BaseModel):
 class PipelineResponse(BaseModel):
     video: VideoResult
     images: list[GeneratedImage]
+```
+
+### Library Endpoints
+
+```python
+from app.database import get_database
+
+@app.get("/api/v1/library", response_model=list[LibraryEntry])
+async def get_library(user_id: str):
+    """Get user's saved storybooks."""
+    db = get_database()
+    return db.get_library(user_id)
+
+@app.post("/api/v1/library", response_model=LibraryEntry)
+async def save_to_library(entry: LibraryEntry, user_id: str):
+    """Save storybook to library."""
+    db = get_database()
+    db.save_storybook(user_id, entry.model_dump())
+    return entry
+
+@app.delete("/api/v1/library/{id}")
+async def delete_from_library(id: str, user_id: str):
+    """Delete storybook from library."""
+    db = get_database()
+    db.delete_storybook(user_id, id)
+    return {"status": "deleted"}
 ```
 
 ### Response Model Updates
@@ -396,7 +485,129 @@ output "cognito_identity_pool_id" {
 }
 ```
 
+### DynamoDB Tables
+
+```hcl
+# ------------------------------------------------------------------------------
+# DynamoDB - Library Table
+# ------------------------------------------------------------------------------
+resource "aws_dynamodb_table" "library" {
+  name         = "${var.app_name}-library"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+  range_key    = "id"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+}
+
+# ------------------------------------------------------------------------------
+# DynamoDB - Checkpoints Table
+# ------------------------------------------------------------------------------
+resource "aws_dynamodb_table" "checkpoints" {
+  name         = "${var.app_name}-checkpoints"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+  range_key    = "run_id"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "run_id"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
+}
+```
+
+**Library Table Schema:**
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| user_id (PK) | String | Cognito sub |
+| id (SK) | String | Storybook UUID |
+| title | String | Story title |
+| thumbnail_key | String | S3 key |
+| video_key | String | S3 key |
+| duration_sec | Number | Video duration |
+| style | String | storybook/watercolor |
+| created_at | String | ISO timestamp |
+
+**Checkpoints Table Schema:**
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| user_id (PK) | String | Cognito sub |
+| run_id (SK) | String | Pipeline run ID |
+| current_stage | String | vision/story/images/voice/video/complete |
+| drawing_analysis | Map | JSON |
+| story_script | Map | JSON |
+| image_result | Map | JSON |
+| audio_result | Map | JSON |
+| video_result | Map | JSON |
+| error | String | Error message (nullable) |
+| created_at | String | ISO timestamp |
+| updated_at | String | ISO timestamp |
+| ttl | Number | Unix timestamp for auto-delete (7 days) |
+
+### ECS Task DynamoDB Access
+
+Add to `aws_iam_role_policy.ecs_task_s3`:
+
+```hcl
+resource "aws_iam_role_policy" "ecs_task_dynamodb" {
+  name = "${var.app_name}-dynamodb-access"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Query"
+      ]
+      Resource = [
+        aws_dynamodb_table.library.arn,
+        aws_dynamodb_table.checkpoints.arn
+      ]
+    }]
+  })
+}
+```
+
+### New Outputs
+
+Add to `infrastructure/outputs.tf`:
+
+```hcl
+output "dynamodb_library_table" {
+  description = "DynamoDB Library table name"
+  value       = aws_dynamodb_table.library.name
+}
+
+output "dynamodb_checkpoints_table" {
+  description = "DynamoDB Checkpoints table name"
+  value       = aws_dynamodb_table.checkpoints.name
+}
+```
+
 ### Files to Modify
 
-- `infrastructure/main.tf` - Add Cognito resources
-- `infrastructure/outputs.tf` - Add Cognito outputs
+- `infrastructure/main.tf` - Add Cognito resources, DynamoDB tables
+- `infrastructure/outputs.tf` - Add Cognito and DynamoDB outputs
