@@ -1,11 +1,23 @@
 """DynamoDB database abstraction."""
 
 import boto3
+from decimal import Decimal
 from functools import lru_cache
 from datetime import datetime, timezone
 from typing import Any
 
 from app.config import get_settings
+
+
+def _convert_floats_to_decimal(obj: Any) -> Any:
+    """Recursively convert float values to Decimal for DynamoDB compatibility."""
+    if isinstance(obj, float):
+        return Decimal(str(obj))
+    elif isinstance(obj, dict):
+        return {k: _convert_floats_to_decimal(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_convert_floats_to_decimal(item) for item in obj]
+    return obj
 
 
 class Database:
@@ -35,7 +47,8 @@ class Database:
 
     def save_storybook(self, user_id: str, entry: dict[str, Any]) -> None:
         """Save a storybook to the library."""
-        self.library_table.put_item(Item={"user_id": user_id, **entry})
+        item = _convert_floats_to_decimal({"user_id": user_id, **entry})
+        self.library_table.put_item(Item=item)
 
     def delete_storybook(self, user_id: str, storybook_id: str) -> None:
         """Delete a storybook from the library."""
@@ -52,15 +65,14 @@ class Database:
     def save_checkpoint(self, user_id: str, run_id: str, data: dict[str, Any]) -> None:
         """Save a pipeline checkpoint with 7-day TTL."""
         ttl = int(datetime.now(timezone.utc).timestamp() + 7 * 24 * 3600)
-        self.checkpoints_table.put_item(
-            Item={
-                "user_id": user_id,
-                "run_id": run_id,
-                "ttl": ttl,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-                **data,
-            }
-        )
+        item = _convert_floats_to_decimal({
+            "user_id": user_id,
+            "run_id": run_id,
+            "ttl": ttl,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            **data,
+        })
+        self.checkpoints_table.put_item(Item=item)
 
     def delete_checkpoint(self, user_id: str, run_id: str) -> None:
         """Delete a pipeline checkpoint."""
