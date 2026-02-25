@@ -40,20 +40,24 @@ async def assemble_video(
 
     # Create concat file for images with durations
     # Match each image to its audio duration
+    # NOTE: FFmpeg concat resolves paths relative to the concat file, so use absolute paths
     with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
         concat_file = f.name
         for img, aud in zip(images.images, audio.audio_files):
-            f.write(f"file '{img.path}'\n")
+            abs_img_path = Path(img.path).resolve()
+            f.write(f"file '{abs_img_path}'\n")
             f.write(f"duration {aud.duration_sec}\n")
         # Add last image again (FFmpeg concat requirement)
         if images.images:
-            f.write(f"file '{images.images[-1].path}'\n")
+            abs_last_img = Path(images.images[-1].path).resolve()
+            f.write(f"file '{abs_last_img}'\n")
 
     # Concatenate all audio files
     with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
         audio_concat_file = f.name
         for aud in audio.audio_files:
-            f.write(f"file '{aud.path}'\n")
+            abs_audio_path = Path(aud.path).resolve()
+            f.write(f"file '{abs_audio_path}'\n")
 
     # Merge audio files
     merged_audio = tempfile.NamedTemporaryFile(suffix='.mp3', delete=False).name
