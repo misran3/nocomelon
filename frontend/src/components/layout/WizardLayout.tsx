@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import AppHeader from './AppHeader';
 import { ProgressBar } from './ProgressBar';
 import { Button } from '../ui/button';
@@ -22,7 +22,6 @@ interface WizardLayoutProps {
   actionDisabled?: boolean;
   actionLoading?: boolean;
   onAction: () => void;
-  onBack?: () => void;
   showProgress?: boolean;
 }
 
@@ -33,7 +32,6 @@ export default function WizardLayout({
   actionDisabled,
   actionLoading,
   onAction,
-  onBack,
   showProgress = true,
 }: WizardLayoutProps) {
   const navigate = useNavigate();
@@ -44,14 +42,6 @@ export default function WizardLayout({
       navigate(route);
     } else if (process.env.NODE_ENV === 'development') {
       console.warn(`No route defined for step ${step}`);
-    }
-  };
-
-  const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else {
-      navigate(-1);
     }
   };
 
@@ -84,18 +74,6 @@ export default function WizardLayout({
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className={`${CONTENT_WIDTH} px-4 py-3 flex gap-3`}>
-          {onBack && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleBack}
-              className="shrink-0"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span className="sr-only">Back</span>
-            </Button>
-          )}
-          
           <Button
             className="flex-1 rounded-xl h-12 text-base font-semibold"
             onClick={onAction}
