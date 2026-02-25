@@ -92,3 +92,5 @@ export const STEP_LABELS = [
   'Preview',
   'Save'
 ] as const;
+
+export const TOTAL_STEPS = STEP_LABELS.length;

@@ -1,5 +1,5 @@
 import { cn } from '../../lib/utils';
-import { STEP_LABELS } from '../../lib/mock-data';
+import { STEP_LABELS, TOTAL_STEPS } from '../../lib/mock-data';
 
 interface ProgressBarProps {
   currentStep: number;
@@ -7,7 +7,7 @@ interface ProgressBarProps {
   onStepClick?: (step: number) => void;
 }
 
-export function ProgressBar({ currentStep, totalSteps = 6, onStepClick }: ProgressBarProps) {
+export function ProgressBar({ currentStep, totalSteps = TOTAL_STEPS, onStepClick }: ProgressBarProps) {
   return (
     <div className="w-full">
       <div className="flex items-center justify-between">
@@ -26,12 +26,13 @@ export function ProgressBar({ currentStep, totalSteps = 6, onStepClick }: Progre
                   disabled={!isCompleted}
                   className={cn(
                     "w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-200",
+                    "disabled:opacity-100 disabled:cursor-not-allowed",
                     isCompleted && "bg-secondary text-secondary-foreground cursor-pointer hover:opacity-80",
                     isCurrent && "bg-primary text-primary-foreground ring-4 ring-primary/20",
                     !isCompleted && !isCurrent && "border-2 border-gray-300 text-gray-400 cursor-default"
                   )}
                   type="button"
-                  aria-label={`Step ${step}: ${STEP_LABELS[i]}`}
+                  aria-label={`Step ${step}: ${STEP_LABELS[i] ?? `Step ${step}`}`}
                   aria-current={isCurrent ? "step" : undefined}
                 >
                   {step}
@@ -45,7 +46,7 @@ export function ProgressBar({ currentStep, totalSteps = 6, onStepClick }: Progre
                     !isCompleted && !isCurrent && "text-muted-foreground"
                   )}
                 >
-                  {STEP_LABELS[i]}
+                  {STEP_LABELS[i] ?? `Step ${step}`}
                 </span>
               </div>
 
