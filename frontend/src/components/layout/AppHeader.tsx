@@ -34,20 +34,20 @@ export default function AppHeader() {
           >
             Library
           </Link>
-          <button
+          <Button
+            variant="ghost"
             onClick={handleSignOut}
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Sign Out
-          </button>
+          </Button>
         </nav>
 
         {/* Mobile Menu (< md) */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" aria-label="Navigation menu">
               <Menu className="h-6 w-6" />
-              <span className="sr-only">Menu</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
