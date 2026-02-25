@@ -1,23 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useWizardState } from '../hooks/use-wizard-state';
 import WizardLayout from '../components/layout/WizardLayout';
-import { MOCK_ANALYSIS } from '../lib/mock-data';
+import { analyzeDrawing } from '../api';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { Skeleton } from '../components/ui/skeleton';
+import { toast } from 'sonner';
 
 export default function RecognizePage() {
   const { state, setAnalysis } = useWizardState();
   const navigate = useNavigate();
   const [analyzing, setAnalyzing] = useState(true);
   const [formData, setFormData] = useState({
-    subject: MOCK_ANALYSIS.subject,
-    setting: MOCK_ANALYSIS.setting,
-    mood: MOCK_ANALYSIS.mood,
+    subject: '',
+    setting: '',
+    mood: '',
   });
+  const [colors, setColors] = useState<string[]>([]);
+  const [details, setDetails] = useState<string[]>([]);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const hasAnalyzed = useRef(false);
 
   useEffect(() => {
     document.title = 'NoComelon | Recognize';
@@ -35,19 +39,46 @@ export default function RecognizePage() {
   }, [state.drawing, navigate]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setAnalyzing(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!state.drawing || hasAnalyzed.current) return;
+    hasAnalyzed.current = true;
+
+    async function analyze() {
+      try {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          try {
+            const base64 = (reader.result as string).split(',')[1];
+            const response = await analyzeDrawing(base64);
+            setFormData({
+              subject: response.drawing.subject,
+              setting: response.drawing.setting,
+              mood: response.drawing.mood,
+            });
+            setColors(response.drawing.colors);
+            setDetails(response.drawing.details);
+            setAnalyzing(false);
+          } catch (error) {
+            toast.error('Failed to analyze drawing');
+            setAnalyzing(false);
+          }
+        };
+        reader.readAsDataURL(state.drawing);
+      } catch (error) {
+        toast.error('Failed to read drawing');
+        setAnalyzing(false);
+      }
+    }
+
+    analyze();
+  }, [state.drawing]);
 
   const handleAction = () => {
     setAnalysis({
       subject: formData.subject,
       setting: formData.setting,
       mood: formData.mood,
-      details: MOCK_ANALYSIS.details,
-      colors: MOCK_ANALYSIS.colors,
+      details: details,
+      colors: colors,
     });
     navigate('/customize');
   };
@@ -114,20 +145,22 @@ export default function RecognizePage() {
             />
           </div>
 
-          <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Detected Colors</div>
-            <div className="flex flex-wrap gap-2">
-              {MOCK_ANALYSIS.colors.map((color, index) => (
-                <span key={index} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border bg-card">
-                  <span
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: color }}
-                  />
-                  <span className="capitalize">{color}</span>
-                </span>
-              ))}
+          {colors.length > 0 && (
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Detected Colors</div>
+              <div className="flex flex-wrap gap-2">
+                {colors.map((color, index) => (
+                  <span key={index} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border bg-card">
+                    <span
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="capitalize">{color}</span>
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </WizardLayout>
