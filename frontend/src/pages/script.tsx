@@ -6,37 +6,64 @@ import { Skeleton } from '../components/ui/skeleton';
 import { useWizardState } from '../hooks/use-wizard-state';
 import WizardLayout from '../components/layout/WizardLayout';
 import SceneEditor from '../components/script/SceneEditor';
-import { MOCK_STORY } from '../lib/mock-data';
+import { generateStory } from '../api';
+import { toast } from 'sonner';
 import { Scene, StoryScript } from '../types';
 
 export default function ScriptPage() {
   const { state, setScript } = useWizardState();
   const navigate = useNavigate();
-  const [scenes, setScenes] = useState<Scene[]>(MOCK_STORY.scenes);
+  const [scenes, setScenes] = useState<Scene[]>([]);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     document.title = 'NoComelon | Script';
-    if (!state.customization.style) {
-      navigate('/customize');
+    if (!state.analysis || !state.customization.style) {
+      navigate('/customize', { replace: true });
       return;
     }
-    
-    // Simulate analyzing state
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, [state.customization.style, navigate]);
 
-  const handleRegenerate = () => {
+    async function fetchStory() {
+      try {
+        const script = await generateStory({
+          drawing: state.analysis!,
+          theme: state.customization.theme,
+          voice_type: state.customization.voice,
+          child_age: state.customization.age,
+          personal_context: state.customization.personalContext || undefined,
+        });
+        setScenes(script.scenes);
+        setScript(script);
+      } catch (error) {
+        toast.error('Failed to generate story');
+        console.error('Failed to generate story:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchStory();
+  }, [state.analysis, state.customization, navigate, setScript]);
+
+  const handleRegenerate = async () => {
     setIsRegenerating(true);
-    setTimeout(() => {
-      setScenes(MOCK_STORY.scenes);
+    try {
+      const script = await generateStory({
+        drawing: state.analysis!,
+        theme: state.customization.theme,
+        voice_type: state.customization.voice,
+        child_age: state.customization.age,
+        personal_context: state.customization.personalContext || undefined,
+      });
+      setScenes(script.scenes);
+      setScript(script);
+    } catch (error) {
+      toast.error('Failed to regenerate story');
+      console.error('Failed to regenerate story:', error);
+    } finally {
       setIsRegenerating(false);
-    }, 1500);
+    }
   };
 
   const handleSceneChange = (index: number, text: string) => {
@@ -54,7 +81,7 @@ export default function ScriptPage() {
     navigate('/preview');
   };
 
-  if (!state.customization.style) return null;
+  if (!state.analysis || !state.customization.style) return null;
 
   if (isLoading) {
 
