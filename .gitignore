@@ -219,9 +219,9 @@ __marimo__/
 .worktrees
 
 # NoComelon generated data
-data/images/*
-data/audio/*
-data/videos/*
-data/checkpoints/*
-!data/*/.gitkeep
+backend/data/images/*
+backend/data/audio/*
+backend/data/videos/*
+backend/data/checkpoints/*
+!backend/data/*/.gitkeep
 .DS_Store
