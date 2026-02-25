@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../components/ui/button';
 import { RefreshCw } from 'lucide-react';
@@ -16,7 +16,33 @@ export default function ScriptPage() {
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const hasFetched = useRef(false);
+
+  const generateStoryRequest = useCallback(() => {
+    if (!state.analysis) return null;
+    return {
+      drawing: state.analysis,
+      theme: state.customization.theme,
+      voice_type: state.customization.voice,
+      child_age: state.customization.age,
+      personal_context: state.customization.personalContext || undefined,
+    };
+  }, [state.analysis, state.customization]);
+
+  const doGenerateStory = useCallback(async () => {
+    const request = generateStoryRequest();
+    if (!request) {
+      setError('Missing drawing analysis');
+      return null;
+    }
+
+    setError(null);
+    const script = await generateStory(request);
+    setScenes(script.scenes);
+    setScript(script);
+    return script;
+  }, [generateStoryRequest, setScript]);
 
   useEffect(() => {
     document.title = 'NoComelon | Script';
@@ -37,41 +63,25 @@ export default function ScriptPage() {
 
     async function fetchStory() {
       try {
-        const script = await generateStory({
-          drawing: state.analysis!,
-          theme: state.customization.theme,
-          voice_type: state.customization.voice,
-          child_age: state.customization.age,
-          personal_context: state.customization.personalContext || undefined,
-        });
-        setScenes(script.scenes);
-        setScript(script);
-      } catch (error) {
-        toast.error('Failed to generate story');
-        console.error('Failed to generate story:', error);
+        await doGenerateStory();
+      } catch (err) {
+        setError('Failed to generate story. Please try again.');
+        console.error('Failed to generate story:', err);
       } finally {
         setIsLoading(false);
       }
     }
 
     fetchStory();
-  }, [state.analysis, state.customization, state.script, navigate, setScript]);
+  }, [state.analysis, state.customization, state.script, navigate, doGenerateStory]);
 
   const handleRegenerate = async () => {
     setIsRegenerating(true);
     try {
-      const script = await generateStory({
-        drawing: state.analysis!,
-        theme: state.customization.theme,
-        voice_type: state.customization.voice,
-        child_age: state.customization.age,
-        personal_context: state.customization.personalContext || undefined,
-      });
-      setScenes(script.scenes);
-      setScript(script);
-    } catch (error) {
-      toast.error('Failed to regenerate story');
-      console.error('Failed to regenerate story:', error);
+      await doGenerateStory();
+    } catch (err) {
+      setError('Failed to regenerate story. Please try again.');
+      console.error('Failed to regenerate story:', err);
     } finally {
       setIsRegenerating(false);
     }
@@ -93,6 +103,24 @@ export default function ScriptPage() {
   };
 
   if (!state.analysis || !state.customization.style) return null;
+
+  if (error && !isLoading && !isRegenerating) {
+    return (
+      <WizardLayout
+        currentStep={4}
+        actionLabel="Create Video"
+        actionDisabled={true}
+        onAction={() => {}}
+      >
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <p className="text-destructive mb-4">{error}</p>
+          <Button variant="outline" onClick={handleRegenerate}>
+            Try Again
+          </Button>
+        </div>
+      </WizardLayout>
+    );
+  }
 
   if (isLoading) {
 
