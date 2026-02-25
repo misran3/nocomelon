@@ -22,6 +22,8 @@ from app.models import (
     AudioResult,
     VideoResult,
     LibraryEntry,
+    PipelineRequest,
+    PipelineResponse,
 )
 from app.stages import (
     analyze_drawing,
@@ -183,3 +185,71 @@ async def api_delete_from_library(storybook_id: str, user_id: str):
     db = get_database()
     db.delete_storybook(user_id, storybook_id)
     return {"status": "deleted"}
+
+
+# Pipeline endpoint
+@app.post("/api/v1/pipeline/generate", response_model=PipelineResponse)
+async def api_generate_pipeline(request: PipelineRequest):
+    """Run full video generation pipeline (images -> voice -> video)."""
+    db = get_database()
+    user_id = request.user_id
+    run_id = request.run_id
+
+    try:
+        # Stage 3: Generate images
+        if user_id:
+            db.save_checkpoint(user_id, run_id, {"current_stage": "images"})
+        image_result = await generate_images(
+            story=request.story,
+            drawing=request.drawing,
+            style=request.style,
+            run_id=run_id,
+            user_id=user_id,
+        )
+
+        # Stage 4: Generate voice
+        if user_id:
+            db.save_checkpoint(user_id, run_id, {
+                "current_stage": "voice",
+                "image_result": image_result.model_dump(),
+            })
+        audio_result = await generate_audio(
+            story=request.story,
+            voice_type=request.voice_type,
+            run_id=run_id,
+            user_id=user_id,
+        )
+
+        # Stage 5: Assemble video
+        if user_id:
+            db.save_checkpoint(user_id, run_id, {
+                "current_stage": "video",
+                "image_result": image_result.model_dump(),
+                "audio_result": audio_result.model_dump(),
+            })
+        video_result = await assemble_video(
+            images=image_result,
+            audio=audio_result,
+            run_id=run_id,
+            user_id=user_id,
+        )
+
+        # Mark complete
+        if user_id:
+            db.save_checkpoint(user_id, run_id, {
+                "current_stage": "complete",
+                "video_result": video_result.model_dump(),
+            })
+
+        return PipelineResponse(
+            video=video_result,
+            images=image_result.images,
+        )
+
+    except Exception as e:
+        if user_id:
+            db.save_checkpoint(user_id, run_id, {
+                "current_stage": "error",
+                "error": str(e),
+            })
+        raise HTTPException(status_code=500, detail=str(e))
