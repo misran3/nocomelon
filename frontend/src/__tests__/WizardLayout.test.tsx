@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import WizardLayout from '../components/layout/WizardLayout';
+import { AuthProvider } from '../hooks/use-auth';
 
 // Mock react-router
 const mockNavigate = vi.fn();
@@ -13,9 +14,21 @@ vi.mock('react-router', async () => {
   };
 });
 
-// Helper to wrap component with MemoryRouter
+// Mock aws-amplify/auth to avoid real auth calls
+vi.mock('aws-amplify/auth', () => ({
+  getCurrentUser: vi.fn().mockRejectedValue(new Error('No user')),
+  signIn: vi.fn(),
+  signOut: vi.fn(),
+  confirmSignIn: vi.fn(),
+}));
+
+// Helper to wrap component with MemoryRouter and AuthProvider
 function renderWithRouter(ui: React.ReactElement) {
-  return render(<MemoryRouter>{ui}</MemoryRouter>);
+  return render(
+    <MemoryRouter>
+      <AuthProvider>{ui}</AuthProvider>
+    </MemoryRouter>
+  );
 }
 
 describe('WizardLayout', () => {
