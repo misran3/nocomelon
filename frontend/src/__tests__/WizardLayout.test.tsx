@@ -1,12 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import WizardLayout from '../components/layout/WizardLayout';
 
 // Mock react-router
 const mockNavigate = vi.fn();
-vi.mock('react-router', () => ({
-  useNavigate: () => mockNavigate,
-}));
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual('react-router');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
+// Helper to wrap component with MemoryRouter
+function renderWithRouter(ui: React.ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>);
+}
 
 describe('WizardLayout', () => {
   beforeEach(() => {
@@ -15,7 +25,7 @@ describe('WizardLayout', () => {
 
   describe('rendering', () => {
     it('renders children correctly', () => {
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -30,7 +40,7 @@ describe('WizardLayout', () => {
     });
 
     it('renders action button with correct label', () => {
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Next Step"
@@ -46,7 +56,7 @@ describe('WizardLayout', () => {
 
   describe('progress bar visibility', () => {
     it('shows progress bar when showProgress is true', () => {
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={2}
           actionLabel="Continue"
@@ -65,7 +75,7 @@ describe('WizardLayout', () => {
     });
 
     it('shows progress bar by default (showProgress defaults to true)', () => {
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -83,7 +93,7 @@ describe('WizardLayout', () => {
     });
 
     it('hides progress bar when showProgress is false', () => {
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -104,7 +114,7 @@ describe('WizardLayout', () => {
 
   describe('action button', () => {
     it('action button is enabled by default', () => {
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -119,7 +129,7 @@ describe('WizardLayout', () => {
     });
 
     it('action button is disabled when actionDisabled is true', () => {
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -135,7 +145,7 @@ describe('WizardLayout', () => {
     });
 
     it('action button is disabled when actionLoading is true', () => {
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -153,7 +163,7 @@ describe('WizardLayout', () => {
 
     it('calls onAction when action button is clicked', () => {
       const onAction = vi.fn();
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -171,7 +181,7 @@ describe('WizardLayout', () => {
 
     it('does not call onAction when button is disabled', () => {
       const onAction = vi.fn();
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Continue"
@@ -191,7 +201,7 @@ describe('WizardLayout', () => {
 
   describe('back button', () => {
     it('does not render back button when onBack is not provided', () => {
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={2}
           actionLabel="Continue"
@@ -205,7 +215,7 @@ describe('WizardLayout', () => {
     });
 
     it('renders back button when onBack is provided', () => {
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={2}
           actionLabel="Continue"
@@ -221,7 +231,7 @@ describe('WizardLayout', () => {
 
     it('calls onBack when back button is clicked', () => {
       const onBack = vi.fn();
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={2}
           actionLabel="Continue"
@@ -247,9 +257,24 @@ describe('WizardLayout', () => {
     });
   });
 
+  describe('step navigation', () => {
+    it('navigates to correct route when completed step is clicked', () => {
+      renderWithRouter(
+        <WizardLayout currentStep={3} actionLabel="Next" onAction={vi.fn()}>
+          <div>Content</div>
+        </WizardLayout>
+      );
+
+      // Click step 1 (completed) - should navigate to /upload
+      const step1Button = screen.getByRole('button', { name: /step 1/i });
+      fireEvent.click(step1Button);
+      expect(mockNavigate).toHaveBeenCalledWith('/upload');
+    });
+  });
+
   describe('loading state', () => {
     it('shows loading spinner and "Please wait" text when actionLoading is true', () => {
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Submit"
@@ -265,7 +290,7 @@ describe('WizardLayout', () => {
     });
 
     it('shows action label when not loading', () => {
-      render(
+      renderWithRouter(
         <WizardLayout
           currentStep={1}
           actionLabel="Submit"

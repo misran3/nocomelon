@@ -42,6 +42,8 @@ export default function WizardLayout({
     const route = STEP_ROUTES[step - 1];
     if (route) {
       navigate(route);
+    } else if (process.env.NODE_ENV === 'development') {
+      console.warn(`No route defined for step ${step}`);
     }
   };
 
@@ -60,7 +62,7 @@ export default function WizardLayout({
       {showProgress && (
         <div className="fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-3 md:py-4 border-b">
            <div className={`${CONTENT_WIDTH} px-4`}>
-             <ProgressBar currentStep={currentStep} totalSteps={6} onStepClick={handleStepClick} />
+             <ProgressBar currentStep={currentStep} totalSteps={STEP_ROUTES.length} onStepClick={handleStepClick} />
            </div>
         </div>
       )}
