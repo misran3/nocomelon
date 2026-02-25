@@ -123,6 +123,7 @@ async def api_generate_images(request: ImagesRequest):
             drawing=request.drawing,
             style=request.style,
             run_id=request.run_id,
+            user_id=request.user_id,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -136,6 +137,7 @@ async def api_generate_audio(request: VoiceRequest):
             story=request.story,
             voice_type=request.voice_type,
             run_id=request.run_id,
+            user_id=request.user_id,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -150,6 +152,7 @@ async def api_assemble_video(request: VideoRequest):
             audio=request.audio,
             run_id=request.run_id,
             music_track=request.music_track,
+            user_id=request.user_id,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

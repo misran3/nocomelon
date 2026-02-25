@@ -28,6 +28,7 @@ async def generate_images(
     drawing: DrawingAnalysis,
     style: Style,
     run_id: str,
+    user_id: str | None = None,
 ) -> ImageResult:
     """
     Generate images for each scene in the story.
@@ -36,15 +37,15 @@ async def generate_images(
         story: The story script with scenes
         drawing: Original drawing analysis (for character description)
         style: Visual style to use
+        run_id: Unique identifier for this run
+        user_id: Optional user ID for S3 path organization
 
     Returns:
         ImageResult with paths to generated images
     """
     settings = get_settings()
+    storage = settings.get_storage()
     client = AsyncOpenAI(api_key=settings.openai_api_key)
-
-    # Ensure output directory exists
-    settings.images_dir.mkdir(parents=True, exist_ok=True)
 
     images = []
     style_prompt = STYLE_PROMPTS[style]
@@ -65,18 +66,30 @@ Child-friendly, safe for young children, no scary elements."""
             n=1,
         )
 
-        # Download and save the image
+        # Download the image
         image_url = response.data[0].url
-        image_path = settings.images_dir / f"{run_id}_scene_{scene.number}.png"
+        filename = f"{run_id}_scene_{scene.number}.png"
 
         async with httpx.AsyncClient() as http_client:
             img_response = await http_client.get(image_url)
+            image_bytes = img_response.content
+
+        # Upload to S3 or save locally
+        if storage is not None:
+            s3_key = storage.build_s3_key(user_id, "images", filename)
+            storage.upload_bytes(image_bytes, s3_key)
+            image_location = storage.generate_presigned_url(s3_key)
+        else:
+            # Save locally (development mode)
+            settings.images_dir.mkdir(parents=True, exist_ok=True)
+            image_path = settings.images_dir / filename
             async with aiofiles.open(image_path, "wb") as f:
-                await f.write(img_response.content)
+                await f.write(image_bytes)
+            image_location = str(image_path)
 
         images.append(GeneratedImage(
             scene_number=scene.number,
-            path=str(image_path),
+            path=image_location,
         ))
 
     return ImageResult(images=images)

@@ -133,6 +133,7 @@ class ImagesRequest(BaseModel):
     story: StoryScript
     drawing: DrawingAnalysis
     style: Style
+    user_id: str | None = None
 
 
 class VoiceRequest(BaseModel):
@@ -140,6 +141,7 @@ class VoiceRequest(BaseModel):
     run_id: str
     story: StoryScript
     voice_type: VoiceType
+    user_id: str | None = None
 
 
 class VideoRequest(BaseModel):
@@ -148,3 +150,4 @@ class VideoRequest(BaseModel):
     images: ImageResult
     audio: AudioResult
     music_track: str | None = None
+    user_id: str | None = None

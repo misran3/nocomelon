@@ -221,6 +221,7 @@ version = "0.1.0"
 source = { editable = "packages/app" }
 dependencies = [
     { name = "aiofiles" },
+    { name = "boto3" },
     { name = "elevenlabs" },
     { name = "fastapi" },
     { name = "ffmpeg-python" },
@@ -242,6 +243,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiofiles", specifier = ">=25.1.0" },
+    { name = "boto3", specifier = ">=1.38.0" },
     { name = "elevenlabs", specifier = ">=2.36.1" },
     { name = "fastapi", specifier = ">=0.129.1" },
     { name = "ffmpeg-python", specifier = ">=0.2.0" },
