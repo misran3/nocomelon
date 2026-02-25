@@ -249,6 +249,46 @@ resource "aws_iam_role_policy" "ecs_task_s3" {
 }
 
 # ------------------------------------------------------------------------------
+# Cognito User Pool
+# ------------------------------------------------------------------------------
+resource "aws_cognito_user_pool" "main" {
+  name = "${var.app_name}-users"
+
+  username_attributes      = ["email"]
+  auto_verified_attributes = ["email"]
+
+  password_policy {
+    minimum_length    = 8
+    require_lowercase = true
+    require_numbers   = true
+    require_symbols   = false
+    require_uppercase = true
+  }
+
+  account_recovery_setting {
+    recovery_mechanism {
+      name     = "verified_email"
+      priority = 1
+    }
+  }
+}
+
+# ------------------------------------------------------------------------------
+# Cognito App Client (no secret for SPA)
+# ------------------------------------------------------------------------------
+resource "aws_cognito_user_pool_client" "app" {
+  name         = "${var.app_name}-app"
+  user_pool_id = aws_cognito_user_pool.main.id
+
+  explicit_auth_flows = [
+    "ALLOW_USER_SRP_AUTH",
+    "ALLOW_REFRESH_TOKEN_AUTH"
+  ]
+
+  generate_secret = false
+}
+
+# ------------------------------------------------------------------------------
 # ECS Cluster
 # ------------------------------------------------------------------------------
 resource "aws_ecs_cluster" "app" {
