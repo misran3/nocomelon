@@ -248,6 +248,29 @@ resource "aws_iam_role_policy" "ecs_task_s3" {
   })
 }
 
+resource "aws_iam_role_policy" "ecs_task_dynamodb" {
+  name = "${var.app_name}-dynamodb-access"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Query"
+      ]
+      Resource = [
+        aws_dynamodb_table.library.arn,
+        aws_dynamodb_table.checkpoints.arn
+      ]
+    }]
+  })
+}
+
 # ------------------------------------------------------------------------------
 # Cognito User Pool
 # ------------------------------------------------------------------------------
@@ -363,6 +386,51 @@ resource "aws_cognito_identity_pool_roles_attachment" "main" {
 
   roles = {
     "authenticated" = aws_iam_role.cognito_authenticated.arn
+  }
+}
+
+# ------------------------------------------------------------------------------
+# DynamoDB - Library Table
+# ------------------------------------------------------------------------------
+resource "aws_dynamodb_table" "library" {
+  name         = "${var.app_name}-library"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+  range_key    = "id"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+}
+
+# ------------------------------------------------------------------------------
+# DynamoDB - Checkpoints Table
+# ------------------------------------------------------------------------------
+resource "aws_dynamodb_table" "checkpoints" {
+  name         = "${var.app_name}-checkpoints"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+  range_key    = "run_id"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "run_id"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
   }
 }
 
