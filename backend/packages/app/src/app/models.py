@@ -117,6 +117,7 @@ class Checkpoint(BaseModel):
 class VisionRequest(BaseModel):
     """Request to analyze a drawing."""
     image_base64: str
+    user_id: str | None = None
 
 
 class StoryRequest(BaseModel):
@@ -126,6 +127,8 @@ class StoryRequest(BaseModel):
     personal_context: str | None = None
     voice_type: VoiceType
     child_age: int = Field(ge=2, le=9)
+    user_id: str | None = None
+    run_id: str | None = None
 
 
 class ImagesRequest(BaseModel):
