@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 echo "=== Frontend Deployment to Amplify ==="
 
@@ -10,6 +10,12 @@ command -v terraform >/dev/null 2>&1 || { echo "Error: terraform not found"; exi
 command -v aws >/dev/null 2>&1 || { echo "Error: aws cli not found"; exit 1; }
 command -v jq >/dev/null 2>&1 || { echo "Error: jq not found"; exit 1; }
 command -v pnpm >/dev/null 2>&1 || { echo "Error: pnpm not found"; exit 1; }
+
+# Verify Terraform outputs are available
+if ! terraform -chdir=$INFRA_DIR output >/dev/null 2>&1; then
+    echo "Error: Terraform outputs not available. Run 'terraform apply' first."
+    exit 1
+fi
 
 # Fetch environment variables from Terraform outputs
 echo "Fetching environment variables from Terraform..."
