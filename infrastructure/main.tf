@@ -289,6 +289,84 @@ resource "aws_cognito_user_pool_client" "app" {
 }
 
 # ------------------------------------------------------------------------------
+# Cognito Identity Pool (for S3 access via Amplify)
+# ------------------------------------------------------------------------------
+resource "aws_cognito_identity_pool" "main" {
+  identity_pool_name               = "${var.app_name}-identity"
+  allow_unauthenticated_identities = false
+
+  cognito_identity_providers {
+    client_id               = aws_cognito_user_pool_client.app.id
+    provider_name           = aws_cognito_user_pool.main.endpoint
+    server_side_token_check = false
+  }
+}
+
+# ------------------------------------------------------------------------------
+# IAM Role for Cognito Authenticated Users
+# ------------------------------------------------------------------------------
+resource "aws_iam_role" "cognito_authenticated" {
+  name = "${var.app_name}-cognito-authenticated"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = "cognito-identity.amazonaws.com"
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "cognito-identity.amazonaws.com:aud" = aws_cognito_identity_pool.main.id
+        }
+        "ForAnyValue:StringLike" = {
+          "cognito-identity.amazonaws.com:amr" = "authenticated"
+        }
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "cognito_s3_access" {
+  name = "${var.app_name}-cognito-s3"
+  role = aws_iam_role.cognito_authenticated.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = "${aws_s3_bucket.assets.arn}/$${cognito-identity.amazonaws.com:sub}/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "s3:ListBucket"
+        Resource = aws_s3_bucket.assets.arn
+        Condition = {
+          StringLike = {
+            "s3:prefix" = "$${cognito-identity.amazonaws.com:sub}/*"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_cognito_identity_pool_roles_attachment" "main" {
+  identity_pool_id = aws_cognito_identity_pool.main.id
+
+  roles = {
+    "authenticated" = aws_iam_role.cognito_authenticated.arn
+  }
+}
+
+# ------------------------------------------------------------------------------
 # ECS Cluster
 # ------------------------------------------------------------------------------
 resource "aws_ecs_cluster" "app" {
