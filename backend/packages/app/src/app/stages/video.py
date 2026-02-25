@@ -69,22 +69,34 @@ async def assemble_video(
     temp_dir = tempfile.mkdtemp()
 
     try:
-        # Download images from URLs or use local paths
+        # Download images from S3 keys or URLs, or use local paths
         local_image_paths = []
         for img in images.images:
-            if img.path.startswith("http"):
-                local_path = await _download_to_temp(img.path, ".png", temp_dir)
+            if img.key.startswith("http"):
+                # Already a URL (legacy)
+                local_path = await _download_to_temp(img.key, ".png", temp_dir)
+            elif storage is not None and not Path(img.key).exists():
+                # S3 key - generate presigned URL and download
+                url = storage.generate_presigned_url(img.key)
+                local_path = await _download_to_temp(url, ".png", temp_dir)
             else:
-                local_path = str(Path(img.path).resolve())
+                # Local path
+                local_path = str(Path(img.key).resolve())
             local_image_paths.append(local_path)
 
-        # Download audio files from URLs or use local paths
+        # Download audio files from S3 keys or URLs, or use local paths
         local_audio_paths = []
         for aud in audio.audio_files:
-            if aud.path.startswith("http"):
-                local_path = await _download_to_temp(aud.path, ".mp3", temp_dir)
+            if aud.key.startswith("http"):
+                # Already a URL (legacy)
+                local_path = await _download_to_temp(aud.key, ".mp3", temp_dir)
+            elif storage is not None and not Path(aud.key).exists():
+                # S3 key - generate presigned URL and download
+                url = storage.generate_presigned_url(aud.key)
+                local_path = await _download_to_temp(url, ".mp3", temp_dir)
             else:
-                local_path = str(Path(aud.path).resolve())
+                # Local path
+                local_path = str(Path(aud.key).resolve())
             local_audio_paths.append(local_path)
 
         # Create output path in temp directory
@@ -157,22 +169,47 @@ async def assemble_video(
         probe_result = subprocess.run(probe_cmd, capture_output=True, text=True)
         duration = float(probe_result.stdout.strip()) if probe_result.stdout.strip() else audio.total_duration_sec
 
+        # Generate thumbnail from first frame
+        thumbnail_filename = f"{run_id}_thumb.jpg"
+        temp_thumbnail_path = Path(temp_dir) / thumbnail_filename
+        thumb_cmd = [
+            'ffmpeg', '-y', '-i', str(temp_output_path),
+            '-ss', '00:00:01', '-vframes', '1',
+            '-vf', 'scale=480:-1',
+            str(temp_thumbnail_path)
+        ]
+        subprocess.run(thumb_cmd, capture_output=True)
+
         # Upload to S3 or save locally
         if storage is not None:
-            s3_key = storage.build_s3_key(user_id, "videos", output_filename)
-            storage.upload_file(str(temp_output_path), s3_key)
-            # 24 hour expiry for final video
-            video_location = storage.generate_presigned_url(s3_key, expires_in=86400)
+            # Upload video
+            video_key = storage.build_s3_key(user_id, "videos", output_filename)
+            storage.upload_file(str(temp_output_path), video_key)
+
+            # Upload thumbnail
+            thumbnail_key = storage.build_s3_key(user_id, "videos", thumbnail_filename)
+            if temp_thumbnail_path.exists():
+                storage.upload_file(str(temp_thumbnail_path), thumbnail_key)
+            else:
+                thumbnail_key = video_key  # Fallback if thumbnail generation failed
         else:
             # Save locally (development mode)
             settings.videos_dir.mkdir(parents=True, exist_ok=True)
             final_output_path = settings.videos_dir / output_filename
             shutil.move(str(temp_output_path), str(final_output_path))
-            video_location = str(final_output_path)
+            video_key = str(final_output_path)
+
+            if temp_thumbnail_path.exists():
+                final_thumb_path = settings.videos_dir / thumbnail_filename
+                shutil.move(str(temp_thumbnail_path), str(final_thumb_path))
+                thumbnail_key = str(final_thumb_path)
+            else:
+                thumbnail_key = video_key
 
         return VideoResult(
-            video_path=video_location,
+            video_key=video_key,
             duration_sec=duration,
+            thumbnail_key=thumbnail_key,
         )
     finally:
         # Cleanup temp directory and all its contents

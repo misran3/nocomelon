@@ -73,7 +73,7 @@ async def generate_audio(
         if storage is not None:
             s3_key = storage.build_s3_key(user_id, "audio", filename)
             storage.upload_bytes(audio_bytes, s3_key)
-            audio_location = storage.generate_presigned_url(s3_key)
+            audio_location = s3_key  # Return key, not presigned URL
         else:
             # Save locally (development mode)
             settings.audio_dir.mkdir(parents=True, exist_ok=True)
@@ -89,7 +89,7 @@ async def generate_audio(
 
         audio_files.append(GeneratedAudio(
             scene_number=scene.number,
-            path=audio_location,
+            key=audio_location,
             duration_sec=duration_sec,
         ))
         total_duration += duration_sec

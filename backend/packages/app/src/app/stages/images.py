@@ -78,7 +78,7 @@ Child-friendly, safe for young children, no scary elements."""
         if storage is not None:
             s3_key = storage.build_s3_key(user_id, "images", filename)
             storage.upload_bytes(image_bytes, s3_key)
-            image_location = storage.generate_presigned_url(s3_key)
+            image_location = s3_key  # Return key, not presigned URL
         else:
             # Save locally (development mode)
             settings.images_dir.mkdir(parents=True, exist_ok=True)
@@ -89,7 +89,7 @@ Child-friendly, safe for young children, no scary elements."""
 
         images.append(GeneratedImage(
             scene_number=scene.number,
-            path=image_location,
+            key=image_location,
         ))
 
     return ImageResult(images=images)
