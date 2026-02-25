@@ -16,49 +16,85 @@ import {
 import { useWizardState } from '../hooks/use-wizard-state';
 import WizardLayout from '../components/layout/WizardLayout';
 import VideoPlayer from '../components/preview/VideoPlayer';
-import { MOCK_VIDEO } from '../lib/mock-data';
 import { useLibrary } from '../hooks/use-library';
-import { StorybookEntry } from '../types';
 import { toast } from 'sonner';
+import { generateVideo, PipelineRequest } from '../api';
+import { useAuth } from '../hooks/use-auth';
+import { useS3Url } from '../hooks/use-s3-url';
+import { LibraryEntry } from '../types';
 
 export default function PreviewPage() {
   const { state, setVideo, resetWizard } = useWizardState();
   const { addStorybook } = useLibrary();
   const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(true);
+  const { user } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+
+  // S3 URL resolution for video playback
+  const { url: videoUrl, isLoading: videoUrlLoading } = useS3Url(state.video?.video_key);
+  const { url: posterUrl } = useS3Url(state.video?.thumbnail_key);
 
   useEffect(() => {
     document.title = 'NoComelon | Preview';
-    if (!state.script) {
-      navigate('/script');
+    if (!state.script || !state.analysis || !state.run_id) {
+      navigate('/script', { replace: true });
       return;
     }
 
-    const timer = setTimeout(() => {
+    // If video already exists, just show it
+    if (state.video) {
       setIsGenerating(false);
-      if (!state.video) {
-        setVideo(MOCK_VIDEO);
+      return;
+    }
+
+    async function runPipeline() {
+      try {
+        const request: PipelineRequest = {
+          run_id: state.run_id!,
+          story: state.script!,
+          drawing: state.analysis!,
+          style: state.customization.style,
+          voice_type: state.customization.voice,
+          user_id: user?.userId,
+        };
+        const response = await generateVideo(request);
+        setVideo(response.video);
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'Failed to generate video';
+        setError(message);
+        toast.error('Failed to generate video');
+        console.error('Pipeline error:', e);
+      } finally {
+        setIsGenerating(false);
       }
-    }, 2000);
+    }
 
-    return () => clearTimeout(timer);
-  }, [state.script, state.video, setVideo, navigate]);
+    runPipeline();
+  }, [state.script, state.analysis, state.run_id, state.video, state.customization, user, navigate, setVideo]);
 
-  const handleSave = () => {
-    const video = state.video ?? MOCK_VIDEO;
+  const handleSave = async () => {
+    if (!state.video || !state.run_id) return;
 
-    const entry: StorybookEntry = {
-      id: Math.random().toString(36).substr(2, 9),
-      title: "Dino's First Day",
-      thumbnail: video.thumbnail,
-      duration_sec: video.duration_sec,
-      style: state.customization.style || 'storybook',
-      createdAt: new Date()
+    const entry: LibraryEntry = {
+      id: state.run_id,
+      title: state.analysis?.subject || 'My Storybook',
+      thumbnail_key: state.video.thumbnail_key,
+      video_key: state.video.video_key,
+      duration_sec: state.video.duration_sec,
+      style: state.customization.style,
+      created_at: new Date().toISOString(),
     };
 
-    addStorybook(entry);
-    toast.success("Saved to library!");
-    navigate('/library');
+    try {
+      await addStorybook(entry);
+      toast.success('Saved to library!');
+      resetWizard();
+      navigate('/library');
+    } catch (e) {
+      toast.error('Failed to save to library');
+      console.error('Save error:', e);
+    }
   };
 
   const handleDiscard = () => {
@@ -66,10 +102,9 @@ export default function PreviewPage() {
     navigate('/upload');
   };
 
-  if (!state.script) return null;
+  if (!state.script || !state.run_id) return null;
 
   if (isGenerating) {
-
     return (
       <WizardLayout
         currentStep={5}
@@ -80,7 +115,7 @@ export default function PreviewPage() {
         <div className="space-y-4 animate-in fade-in duration-300">
           {/* Video area skeleton */}
           <Skeleton className="aspect-video w-full rounded-2xl" />
-          
+
           {/* Generating message card */}
           <div className="rounded-xl border bg-card p-4 text-center space-y-2">
             <div className="flex items-center justify-center gap-2">
@@ -90,7 +125,7 @@ export default function PreviewPage() {
             </div>
             <p className="text-sm font-medium text-muted-foreground">Creating your storybook...</p>
           </div>
-          
+
           {/* Metadata skeletons */}
           <Skeleton className="h-6 w-48" />
           <Skeleton className="h-4 w-32" />
@@ -99,11 +134,26 @@ export default function PreviewPage() {
     );
   }
 
-  // Fallback if video is still missing after generating (shouldn't happen with mock)
-  // if (!state.video) return null;
+  if (error) {
+    return (
+      <WizardLayout
+        currentStep={5}
+        actionLabel="Save to Library"
+        actionDisabled={true}
+        onAction={() => {}}
+      >
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <p className="text-destructive mb-4">{error}</p>
+          <Button variant="outline" onClick={() => navigate('/script')}>
+            Go Back to Script
+          </Button>
+        </div>
+      </WizardLayout>
+    );
+  }
 
-  const minutes = Math.floor(MOCK_VIDEO.duration_sec / 60);
-  const seconds = (MOCK_VIDEO.duration_sec % 60).toString().padStart(2, '0');
+  const minutes = Math.floor((state.video?.duration_sec || 0) / 60);
+  const seconds = ((state.video?.duration_sec || 0) % 60).toString().padStart(2, '0');
 
   return (
     <WizardLayout
@@ -113,14 +163,14 @@ export default function PreviewPage() {
     >
       <div className="space-y-6 animate-in fade-in duration-500">
         <h1 className="text-xl font-bold">Preview your storybook</h1>
-        
-        <VideoPlayer 
-          src={MOCK_VIDEO.video_path} 
-          poster={MOCK_VIDEO.thumbnail} 
+
+        <VideoPlayer
+          src={videoUrl || ''}
+          poster={posterUrl || ''}
         />
 
         <div>
-          <p className="text-lg font-semibold">Dino's First Day</p>
+          <p className="text-lg font-semibold">{state.analysis?.subject || 'My Storybook'}</p>
           <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
             <span>{minutes}:{seconds}</span>
             <span>·</span>
@@ -131,8 +181,8 @@ export default function PreviewPage() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => navigate('/customize')}
           >
             Try different look
