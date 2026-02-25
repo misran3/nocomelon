@@ -1,41 +1,45 @@
 import { useState, useEffect } from 'react';
-import { StorybookEntry } from '../types';
-import { MOCK_LIBRARY } from '../lib/mock-data';
+import { useAuth } from './use-auth';
+import { getLibrary, saveToLibrary, deleteFromLibrary } from '../api';
+import { LibraryEntry } from '../types';
 
 export function useLibrary() {
-  const [library, setLibrary] = useState<StorybookEntry[]>(() => {
-    if (typeof window === 'undefined') return MOCK_LIBRARY;
-    
-    const stored = localStorage.getItem('nocomelon-library');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        // Restore Date objects from JSON strings
-        return parsed.map((item: any) => ({
-          ...item,
-          createdAt: new Date(item.createdAt)
-        }));
-      } catch (error) {
-        console.error('Failed to parse stored library:', error);
-        return MOCK_LIBRARY;
-      }
-    }
-    return MOCK_LIBRARY;
-  });
+  const { user } = useAuth();
+  const [library, setLibrary] = useState<LibraryEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    localStorage.setItem('nocomelon-library', JSON.stringify(library));
-  }, [library]);
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
-  const addStorybook = (entry: StorybookEntry) => {
-    setLibrary((prev) => {
-      const updated = [entry, ...prev];
-      localStorage.setItem('nocomelon-library', JSON.stringify(updated));
-      return updated;
-    });
+    async function fetchLibrary() {
+      try {
+        const data = await getLibrary(user!.userId);
+        setLibrary(data);
+        setError(null);
+      } catch (e) {
+        setError('Failed to load library');
+        console.error('Failed to load library:', e);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchLibrary();
+  }, [user]);
+
+  const addStorybook = async (entry: LibraryEntry) => {
+    if (!user) throw new Error('Not authenticated');
+    await saveToLibrary(entry, user.userId);
+    setLibrary((prev) => [entry, ...prev]);
   };
 
-  const removeStorybook = (id: string) => {
+  const removeStorybook = async (id: string) => {
+    if (!user) throw new Error('Not authenticated');
+    await deleteFromLibrary(id, user.userId);
     setLibrary((prev) => prev.filter((item) => item.id !== id));
   };
 
@@ -45,8 +49,10 @@ export function useLibrary() {
 
   return {
     library,
+    isLoading,
+    error,
     addStorybook,
     removeStorybook,
-    getStorybook
+    getStorybook,
   };
 }
