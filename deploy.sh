@@ -45,12 +45,57 @@ fi
 ECR_URL=$(terraform -chdir="$INFRA_DIR" output -raw ecr_repository_url)
 ECS_CLUSTER=$(terraform -chdir="$INFRA_DIR" output -raw ecs_cluster_name)
 ECS_SERVICE=$(terraform -chdir="$INFRA_DIR" output -raw ecs_service_name)
+OPENAI_SECRET_ARN=$(terraform -chdir="$INFRA_DIR" output -raw openai_secret_arn)
+ELEVENLABS_SECRET_ARN=$(terraform -chdir="$INFRA_DIR" output -raw elevenlabs_secret_arn)
 AWS_REGION=$(aws configure get region 2>/dev/null || echo "us-east-1")
 
 log_info "ECR Repository: $ECR_URL"
 log_info "ECS Cluster: $ECS_CLUSTER"
 log_info "ECS Service: $ECS_SERVICE"
 log_info "AWS Region: $AWS_REGION"
+
+# ------------------------------------------------------------------------------
+# Ensure secrets are populated
+# ------------------------------------------------------------------------------
+check_and_set_secret() {
+    local secret_arn="$1"
+    local env_var_name="$2"
+    local env_var_value="${!env_var_name:-}"
+    local secret_name=$(echo "$secret_arn" | sed 's/.*secret://' | sed 's/-[^-]*$//')
+
+    # Check if secret has a value
+    if aws secretsmanager get-secret-value --secret-id "$secret_arn" --region "$AWS_REGION" >/dev/null 2>&1; then
+        log_info "Secret $secret_name already has a value"
+        return 0
+    fi
+
+    # Secret has no value - try to set from env var
+    if [ -z "$env_var_value" ]; then
+        log_error "Secret $secret_name has no value and $env_var_name environment variable is not set"
+        log_error "Either set $env_var_name or run:"
+        log_error "  aws secretsmanager put-secret-value --secret-id $secret_arn --secret-string 'your-key'"
+        return 1
+    fi
+
+    log_info "Setting secret $secret_name from $env_var_name environment variable..."
+    aws secretsmanager put-secret-value \
+        --secret-id "$secret_arn" \
+        --secret-string "$env_var_value" \
+        --region "$AWS_REGION" >/dev/null
+    log_info "Secret $secret_name set successfully"
+}
+
+log_info "Checking secrets..."
+SECRETS_OK=true
+check_and_set_secret "$OPENAI_SECRET_ARN" "OPENAI_API_KEY" || SECRETS_OK=false
+check_and_set_secret "$ELEVENLABS_SECRET_ARN" "ELEVENLABS_API_KEY" || SECRETS_OK=false
+
+if [ "$SECRETS_OK" = false ]; then
+    log_error "Missing secrets. Set environment variables and retry:"
+    log_error "  export OPENAI_API_KEY='sk-...'"
+    log_error "  export ELEVENLABS_API_KEY='...'"
+    exit 1
+fi
 
 # Authenticate with ECR
 log_info "Authenticating with ECR..."
