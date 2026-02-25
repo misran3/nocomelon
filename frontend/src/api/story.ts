@@ -7,6 +7,8 @@ export interface StoryRequest {
   voice_type: VoiceType;
   child_age: number;
   personal_context?: string;
+  user_id?: string;
+  run_id?: string;
 }
 
 export async function generateStory(request: StoryRequest): Promise<StoryScript> {

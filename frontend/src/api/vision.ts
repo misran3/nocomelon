@@ -6,9 +6,12 @@ export interface VisionResponse {
   drawing: DrawingAnalysis;
 }
 
-export async function analyzeDrawing(imageBase64: string): Promise<VisionResponse> {
+export async function analyzeDrawing(imageBase64: string, userId?: string): Promise<VisionResponse> {
   return apiRequest<VisionResponse>('/api/v1/vision/analyze', {
     method: 'POST',
-    body: JSON.stringify({ image_base64: imageBase64 }),
+    body: JSON.stringify({
+      image_base64: imageBase64,
+      user_id: userId,
+    }),
   });
 }
