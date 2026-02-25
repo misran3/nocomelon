@@ -6,6 +6,15 @@ import { ProgressBar } from './ProgressBar';
 import { Button } from '../ui/button';
 import { cn, CONTENT_WIDTH } from '../../lib/utils';
 
+const STEP_ROUTES = [
+  '/upload',
+  '/recognize',
+  '/customize',
+  '/script',
+  '/preview',
+  '/library'
+] as const;
+
 interface WizardLayoutProps {
   children: React.ReactNode;
   currentStep: number;
@@ -29,6 +38,13 @@ export default function WizardLayout({
 }: WizardLayoutProps) {
   const navigate = useNavigate();
 
+  const handleStepClick = (step: number) => {
+    const route = STEP_ROUTES[step - 1];
+    if (route) {
+      navigate(route);
+    }
+  };
+
   const handleBack = () => {
     if (onBack) {
       onBack();
@@ -44,7 +60,7 @@ export default function WizardLayout({
       {showProgress && (
         <div className="fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-3 md:py-4 border-b">
            <div className={`${CONTENT_WIDTH} px-4`}>
-             <ProgressBar currentStep={currentStep} totalSteps={6} />
+             <ProgressBar currentStep={currentStep} totalSteps={6} onStepClick={handleStepClick} />
            </div>
         </div>
       )}
