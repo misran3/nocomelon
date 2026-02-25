@@ -8,6 +8,7 @@ import { Button } from '../components/ui/button';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
+import { CONTENT_WIDTH } from '../lib/utils';
 
 export default function LibraryPage() {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ export default function LibraryPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <AppHeader />
       
-      <main className="flex-1 pt-20 px-4 pb-24 max-w-md mx-auto w-full">
+      <main className={`flex-1 pt-20 px-4 pb-24 ${CONTENT_WIDTH} w-full`}>
         {library.length > 0 ? (
           <>
             <div className="flex items-center justify-between mb-6">
@@ -42,7 +43,7 @@ export default function LibraryPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {library.map((story) => (
                 <StorybookCard 
                   key={story.id} 
