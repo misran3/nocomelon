@@ -64,7 +64,6 @@ export default function RecognizePage() {
       actionLabel="Looks Good!"
       onAction={handleAction}
       showProgress={true}
-      onBack={() => navigate('/upload')}
     >
       <div className="flex justify-center mt-4 mb-6">
         <div className="w-[100px] h-[100px] rounded-xl overflow-hidden border-2 border-primary/20 shadow-sm bg-muted">

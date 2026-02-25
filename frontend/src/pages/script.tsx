@@ -84,7 +84,6 @@ export default function ScriptPage() {
       actionLabel="Create Video"
       actionDisabled={isRegenerating}
       onAction={handleAction}
-      onBack={() => navigate('/customize')}
     >
         <div className="space-y-6 animate-in fade-in duration-300">
           <div>
