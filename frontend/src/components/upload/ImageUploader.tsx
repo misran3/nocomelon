@@ -91,7 +91,8 @@ export function ImageUploader({ value, onChange }: ImageUploaderProps) {
     e.stopPropagation();
     setIsDragOver(false);
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('image/')) {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/heic'];
+    if (file && allowedTypes.includes(file.type)) {
       processFile(file);
     }
   };
@@ -146,7 +147,7 @@ export function ImageUploader({ value, onChange }: ImageUploaderProps) {
           type="file"
           ref={fileInputRef}
           className="hidden"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/heic,.jpg,.jpeg,.png,.heic"
           onChange={handleFileChange}
         />
       </div>
@@ -168,7 +169,7 @@ export function ImageUploader({ value, onChange }: ImageUploaderProps) {
         type="file"
         ref={fileInputRef}
         className="hidden"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/heic,.jpg,.jpeg,.png,.heic"
         onChange={handleFileChange}
       />
       
