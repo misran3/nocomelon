@@ -7,7 +7,7 @@ export interface PipelineRequest {
   drawing: DrawingAnalysis;
   style: Style;
   voice_type: VoiceType;
-  user_id?: string;
+  user_id: string;
 }
 
 export interface GeneratedImage {
@@ -26,8 +26,14 @@ export interface PipelineResponse {
   images: GeneratedImage[];
 }
 
-export async function generateVideo(request: PipelineRequest): Promise<PipelineResponse> {
-  return apiRequest<PipelineResponse>('/api/v1/pipeline/generate', {
+export interface AsyncJobResponse {
+  run_id: string;
+  status: 'processing' | 'complete' | 'error';
+  current_stage: string;
+}
+
+export async function generateVideo(request: PipelineRequest): Promise<AsyncJobResponse> {
+  return apiRequest<AsyncJobResponse>('/api/v1/pipeline/generate', {
     method: 'POST',
     body: JSON.stringify(request),
   });

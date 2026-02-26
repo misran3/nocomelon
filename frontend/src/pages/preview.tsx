@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
@@ -14,6 +14,7 @@ import {
   AlertDialogTrigger,
 } from '../components/ui/alert-dialog';
 import { useWizardState } from '../hooks/use-wizard-state';
+import { useJobPolling } from '../hooks/use-job-polling';
 import WizardLayout from '../components/layout/WizardLayout';
 import VideoPlayer from '../components/preview/VideoPlayer';
 import { useLibrary } from '../hooks/use-library';
@@ -21,7 +22,13 @@ import { toast } from 'sonner';
 import { generateVideo, PipelineRequest } from '../api';
 import { useAuth } from '../hooks/use-auth';
 import { useS3Url } from '../hooks/use-s3-url';
-import { LibraryEntry } from '../types';
+import { LibraryEntry, VideoResult } from '../types';
+
+const STAGE_LABELS: Record<string, string> = {
+  'images': 'Creating illustrations...',
+  'voice': 'Recording narration...',
+  'video': 'Assembling your storybook...',
+};
 
 export default function PreviewPage() {
   const { state, setVideo, resetWizard } = useWizardState();
@@ -35,6 +42,30 @@ export default function PreviewPage() {
   // S3 URL resolution for video playback
   const { url: videoUrl, isLoading: videoUrlLoading } = useS3Url(state.video?.video_key);
   const { url: posterUrl } = useS3Url(state.video?.thumbnail_key);
+
+  // Polling hook for async pipeline
+  const handlePollComplete = useCallback((data: { video: Record<string, unknown> | null }) => {
+    if (data.video) {
+      const video = data.video as unknown as VideoResult;
+      setVideo(video);
+      setIsGenerating(false);
+    }
+  }, [setVideo]);
+
+  const handlePollError = useCallback((err: string) => {
+    setError(err || 'Failed to generate video');
+    toast.error('Failed to generate video');
+    setIsGenerating(false);
+  }, []);
+
+  const { status, isPolling, startPolling } = useJobPolling(
+    state.run_id,
+    user?.userId ?? null,
+    {
+      onComplete: handlePollComplete,
+      onError: handlePollError,
+    }
+  );
 
   useEffect(() => {
     document.title = 'NoComelon | Preview';
@@ -58,7 +89,7 @@ export default function PreviewPage() {
     async function runPipeline() {
       try {
         // Explicit null checks (defense-in-depth)
-        if (!state.run_id || !state.script || !state.analysis) {
+        if (!state.run_id || !state.script || !state.analysis || !user?.userId) {
           setError('Missing required data. Please start over.');
           setIsGenerating(false);
           return;
@@ -70,22 +101,23 @@ export default function PreviewPage() {
           drawing: state.analysis,
           style: state.customization.style,
           voice_type: state.customization.voice,
-          user_id: user?.userId,
+          user_id: user.userId,
         };
-        const response = await generateVideo(request);
-        setVideo(response.video);
+        // API now returns immediately
+        await generateVideo(request);
+        // Start polling for results
+        startPolling();
       } catch (e) {
         const message = e instanceof Error ? e.message : 'Failed to generate video';
         setError(message);
         toast.error('Failed to generate video');
         console.error('Pipeline error:', e);
-      } finally {
         setIsGenerating(false);
       }
     }
 
     runPipeline();
-  }, [state.script, state.analysis, state.run_id, state.video, state.customization, user, navigate, setVideo]);
+  }, [state.script, state.analysis, state.run_id, state.video, state.customization, user, navigate, setVideo, startPolling]);
 
   const handleSave = async () => {
     if (!state.video || !state.run_id) return;
@@ -119,6 +151,10 @@ export default function PreviewPage() {
   if (!state.script || !state.run_id) return null;
 
   if (isGenerating) {
+    const currentStageLabel = status?.current_stage
+      ? STAGE_LABELS[status.current_stage] || 'Processing...'
+      : 'Creating your storybook...';
+
     return (
       <WizardLayout
         currentStep={5}
@@ -137,7 +173,7 @@ export default function PreviewPage() {
               <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
               <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
-            <p className="text-sm font-medium text-muted-foreground">Creating your storybook...</p>
+            <p className="text-sm font-medium text-muted-foreground">{currentStageLabel}</p>
           </div>
 
           {/* Metadata skeletons */}
