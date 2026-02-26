@@ -377,3 +377,50 @@ async def get_job_status(run_id: str, user_id: str = Query(...)) -> JobStatusRes
         video=checkpoint.get("video"),
         updated_at=checkpoint.get("updated_at"),
     )
+
+
+class PresignedUrlRequest(BaseModel):
+    """Request model for generating pre-signed URLs."""
+    s3_key: str
+
+
+class PresignedUrlResponse(BaseModel):
+    """Response model for pre-signed URL."""
+    url: str
+    expires_in: int
+
+
+@app.post("/api/v1/storage/presigned-url")
+async def generate_presigned_url(
+    request: PresignedUrlRequest,
+    user_id: str = Query(..., description="User ID for authorization"),
+) -> PresignedUrlResponse:
+    """Generate a pre-signed URL for accessing an S3 object.
+
+    The S3 key must belong to the requesting user (starts with user_id/).
+    """
+    # Security: Verify the S3 key belongs to the requesting user
+    if not request.s3_key.startswith(f"{user_id}/"):
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied: S3 key does not belong to this user"
+        )
+
+    settings = get_settings()
+    storage = settings.get_storage()
+
+    if not storage:
+        raise HTTPException(
+            status_code=500,
+            detail="S3 storage not configured"
+        )
+
+    try:
+        expires_in = 3600  # 1 hour
+        url = storage.generate_presigned_url(request.s3_key, expires_in=expires_in)
+        return PresignedUrlResponse(url=url, expires_in=expires_in)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate pre-signed URL: {str(e)}"
+        )

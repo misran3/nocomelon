@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { getUrl } from 'aws-amplify/storage';
+import { getPresignedUrl } from '../api/storage';
+import { useAuth } from './use-auth';
 
 export function useS3Url(key: string | null | undefined) {
   const [url, setUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
-    if (!key) {
+    if (!key || !user?.userId) {
       setUrl(null);
       setIsLoading(false);
       return;
@@ -17,11 +19,11 @@ export function useS3Url(key: string | null | undefined) {
     setIsLoading(true);
     setError(null);
 
-    // Amplify v6 uses 'path' instead of 'key'
-    getUrl({ path: key })
+    // Use backend API to generate pre-signed URL
+    getPresignedUrl(key, user.userId)
       .then(({ url }) => {
         if (!cancelled) {
-          setUrl(url.toString());
+          setUrl(url);
           setIsLoading(false);
         }
       })
@@ -36,7 +38,7 @@ export function useS3Url(key: string | null | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [key]);
+  }, [key, user?.userId]);
 
   return { url, isLoading, error };
 }
