@@ -1,17 +1,63 @@
-NoComelon 
+# NoComelon
 
-AI storybook generator where parents co-create every story. Your child draws, you direct, AI builds it, and nothing reaches your kid without your approval.
+AI storybook generator where parents co-create stories from their child's drawings.
 
-The Problem
+## Architecture
 
-Every day, kids watch hours of content made by algorithms optimizing for engagement — not their development. Parents can block it. But they can't replace or curate it.
-Until now.
+![Architecture](landing-page/public/architecture.png)
 
-What it does?
+## Project Structure
 
-NoComelon turns a child's drawing into a 1-2 minute animated storybook with narration, music, and a story arc — all shaped by the parent. The child never interacts with AI directly.
-CoComelon feeds your kid content. NoComelon lets you make it.
+```
+├── frontend/        # React app (Vite)
+├── landing-page/    # Marketing site (Vite)
+├── backend/         # Python API (FastAPI + uv)
+└── infrastructure/  # AWS resources (Terraform)
+```
 
-Developed by Mohammed Misran and Isha Kaushik
+## Prerequisites
 
-Submitted to Columbia AI for Good Hackathon · 20-27th February 2026
+- Node.js 18+
+- pnpm
+- Python 3.12+
+- uv
+- AWS account + CLI configured
+- Terraform 1.0+
+
+## Quick Start
+
+### Frontend
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
+
+### Landing Page
+```bash
+cd landing-page
+pnpm install
+pnpm dev
+```
+
+### Backend
+```bash
+cd backend
+uv sync --all-packages
+uv run uvicorn app.main:app --reload
+```
+
+### Infrastructure
+```bash
+cd infrastructure
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your AWS settings
+terraform init
+terraform apply
+```
+
+## Team
+
+- [Mohammed Misran](https://www.linkedin.com/in/mmisran) · University of Pittsburgh
+- [Isha Kaushik](https://www.linkedin.com/in/ishakaushik04/) · Columbia University
+
