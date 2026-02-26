@@ -39,6 +39,7 @@ export default function PreviewPage() {
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const hasStartedPipeline = useRef(false);
+  const isNavigatingAway = useRef(false);
 
   // S3 URL resolution for video playback
   const { url: videoUrl, isLoading: videoUrlLoading } = useS3Url(state.video?.video_key);
@@ -71,7 +72,10 @@ export default function PreviewPage() {
   useEffect(() => {
     document.title = 'NoComelon | Preview';
     if (!state.script || !state.analysis || !state.run_id) {
-      navigate('/script', { replace: true });
+      // Don't redirect if we're intentionally navigating away (e.g., after save)
+      if (!isNavigatingAway.current) {
+        navigate('/script', { replace: true });
+      }
       return;
     }
 
@@ -136,6 +140,7 @@ export default function PreviewPage() {
     try {
       await addStorybook(entry);
       toast.success('Saved to library!');
+      isNavigatingAway.current = true;
       navigate('/library');
       resetWizard();
     } catch (e) {
