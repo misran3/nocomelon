@@ -5,6 +5,10 @@ import WhyNoComelon from './components/WhyNoComelon';
 import DemoVideo from './components/DemoVideo';
 import TechStack from './components/TechStack';
 import Features from './components/Features';
+import WhatsNext from './components/WhatsNext';
+import Team from './components/Team';
+import CTA from './components/CTA';
+import Footer from './components/Footer';
 
 export default function App() {
   return (
@@ -17,7 +21,11 @@ export default function App() {
         <DemoVideo />
         <TechStack />
         <Features />
+        <WhatsNext />
+        <Team />
+        <CTA />
       </main>
+      <Footer />
     </div>
   );
 }
