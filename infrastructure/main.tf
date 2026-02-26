@@ -266,6 +266,7 @@ resource "aws_iam_role_policy" "ecs_task_dynamodb" {
       ]
       Resource = [
         aws_dynamodb_table.library.arn,
+        "${aws_dynamodb_table.library.arn}/index/*",
         aws_dynamodb_table.checkpoints.arn
       ]
     }]

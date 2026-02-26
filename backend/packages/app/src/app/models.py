@@ -52,7 +52,7 @@ class Scene(BaseModel):
 
 class StoryScript(BaseModel):
     """Complete story script with scenes."""
-    title: str = Field(description="Creative, child-friendly story title")
+    title: str | None = Field(default=None, description="Creative, child-friendly story title")
     scenes: list[Scene]
     total_scenes: int
 

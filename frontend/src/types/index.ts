@@ -18,7 +18,7 @@ export interface Scene {
 }
 
 export interface StoryScript {
-  title: string;
+  title?: string | null;
   scenes: Scene[];
   total_scenes: number;
 }
