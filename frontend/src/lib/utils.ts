@@ -7,6 +7,6 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Responsive content width classes.
- * Mobile: 448px, sm: 512px, md: 576px, lg: 672px
+ * Mobile: 448px, md: 672px, lg: 896px, xl: 1024px
  */
-export const CONTENT_WIDTH = "max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto";
+export const CONTENT_WIDTH = "max-w-md md:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto";
