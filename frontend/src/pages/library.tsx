@@ -70,29 +70,24 @@ export default function LibraryPage() {
           <>
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-bold text-foreground">Your Storybooks</h1>
-              <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold">
-                {library.length} stories
-              </div>
+              <Button
+                variant="outline"
+                onClick={handleCreateNew}
+                className="border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create New
+              </Button>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {library.map((story) => (
-                <StorybookCard 
-                  key={story.id} 
-                  storybook={story} 
-                  onClick={() => handleStoryClick(story)} 
+                <StorybookCard
+                  key={story.id}
+                  storybook={story}
+                  onClick={() => handleStoryClick(story)}
                 />
               ))}
-              
-              <button
-                onClick={handleCreateNew}
-                className="aspect-[3/4] rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-colors flex flex-col items-center justify-center gap-2 group"
-              >
-                <div className="w-12 h-12 rounded-full bg-secondary/10 text-secondary-foreground flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Plus className="w-6 h-6" />
-                </div>
-                <span className="text-sm font-medium text-muted-foreground">Create New</span>
-              </button>
             </div>
           </>
         ) : (
