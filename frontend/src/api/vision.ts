@@ -1,13 +1,13 @@
 import { apiRequest } from './client';
-import { DrawingAnalysis } from '../types';
 
-export interface VisionResponse {
+export interface AsyncJobResponse {
   run_id: string;
-  drawing: DrawingAnalysis;
+  status: 'processing' | 'complete' | 'error';
+  current_stage: string;
 }
 
-export async function analyzeDrawing(imageBase64: string, userId?: string): Promise<VisionResponse> {
-  return apiRequest<VisionResponse>('/api/v1/vision/analyze', {
+export async function analyzeDrawing(imageBase64: string, userId: string): Promise<AsyncJobResponse> {
+  return apiRequest<AsyncJobResponse>('/api/v1/vision/analyze', {
     method: 'POST',
     body: JSON.stringify({
       image_base64: imageBase64,

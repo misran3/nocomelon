@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useWizardState } from '../hooks/use-wizard-state';
 import { useAuth } from '../hooks/use-auth';
+import { useJobPolling } from '../hooks/use-job-polling';
 import WizardLayout from '../components/layout/WizardLayout';
 import { analyzeDrawing } from '../api';
 import { Input } from '../components/ui/input';
@@ -9,6 +10,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { Skeleton } from '../components/ui/skeleton';
 import { toast } from 'sonner';
+import { DrawingAnalysis } from '../types';
 
 export default function RecognizePage() {
   const { state, setAnalysis, setRunId } = useWizardState();
@@ -23,7 +25,33 @@ export default function RecognizePage() {
   const [colors, setColors] = useState<string[]>([]);
   const [details, setDetails] = useState<string[]>([]);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const [runId, setLocalRunId] = useState<string | null>(null);
   const hasAnalyzed = useRef(false);
+
+  // Polling hook for async vision analysis
+  const handlePollComplete = useCallback((data: { drawing_analysis: Record<string, unknown> | null }) => {
+    if (data.drawing_analysis) {
+      const analysis = data.drawing_analysis as unknown as DrawingAnalysis;
+      setFormData({
+        subject: analysis.subject,
+        setting: analysis.setting,
+        mood: analysis.mood,
+      });
+      setColors(analysis.colors);
+      setDetails(analysis.details);
+      setAnalyzing(false);
+    }
+  }, []);
+
+  const handlePollError = useCallback((err: string) => {
+    toast.error(err || 'Failed to analyze drawing');
+    setAnalyzing(false);
+  }, []);
+
+  const { status, isPolling, startPolling } = useJobPolling(runId, user?.userId ?? null, {
+    onComplete: handlePollComplete,
+    onError: handlePollError,
+  });
 
   useEffect(() => {
     document.title = 'NoComelon | Recognize';
@@ -41,7 +69,7 @@ export default function RecognizePage() {
   }, [state.drawing, navigate]);
 
   useEffect(() => {
-    if (!state.drawing || hasAnalyzed.current) return;
+    if (!state.drawing || hasAnalyzed.current || !user?.userId) return;
     hasAnalyzed.current = true;
 
     async function analyze() {
@@ -50,16 +78,12 @@ export default function RecognizePage() {
         reader.onloadend = async () => {
           try {
             const base64 = (reader.result as string).split(',')[1];
-            const response = await analyzeDrawing(base64, user?.userId);
+            // API now returns immediately with run_id
+            const response = await analyzeDrawing(base64, user!.userId);
+            setLocalRunId(response.run_id);
             setRunId(response.run_id);
-            setFormData({
-              subject: response.drawing.subject,
-              setting: response.drawing.setting,
-              mood: response.drawing.mood,
-            });
-            setColors(response.drawing.colors);
-            setDetails(response.drawing.details);
-            setAnalyzing(false);
+            // Start polling for results
+            startPolling();
           } catch (error) {
             toast.error('Failed to analyze drawing');
             setAnalyzing(false);
@@ -73,7 +97,7 @@ export default function RecognizePage() {
     }
 
     analyze();
-  }, [state.drawing]);
+  }, [state.drawing, user?.userId, setRunId, startPolling]);
 
   const handleAction = () => {
     setAnalysis({
@@ -117,6 +141,11 @@ export default function RecognizePage() {
           <Skeleton className="h-20 w-full rounded-md" />
           <Skeleton className="h-10 w-full rounded-md" />
           <Skeleton className="h-6 w-full rounded-full" />
+          {isPolling && status?.current_stage && (
+            <p className="text-sm text-muted-foreground text-center">
+              {status.current_stage === 'vision' ? 'Analyzing your drawing...' : 'Processing...'}
+            </p>
+          )}
         </div>
       ) : (
         <div className="bg-card rounded-xl border border-border p-4 space-y-4 animate-in fade-in duration-300">
