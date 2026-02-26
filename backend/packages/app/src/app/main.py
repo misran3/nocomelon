@@ -148,9 +148,9 @@ async def api_analyze_drawing(request: VisionRequest):
     return {"run_id": run_id, "status": "processing", "current_stage": "vision"}
 
 
-@app.post("/api/v1/story/generate", response_model=StoryScript)
-async def api_generate_story(request: StoryRequest):
-    """Stage 2: Generate a story."""
+async def process_story_background(request: StoryRequest):
+    """Background task to process story generation."""
+    db = get_database()
     try:
         story = await generate_story(
             drawing=request.drawing,
@@ -159,19 +159,39 @@ async def api_generate_story(request: StoryRequest):
             voice_type=request.voice_type,
             personal_context=request.personal_context,
         )
-
-        # Save checkpoint if user is authenticated
-        if request.user_id and request.run_id:
-            db = get_database()
-            db.save_checkpoint(request.user_id, request.run_id, {
-                "current_stage": "story",
-                "drawing_analysis": request.drawing.model_dump(),
-                "story_script": story.model_dump(),
-            })
-
-        return story
+        db.save_checkpoint(request.user_id, request.run_id, {
+            "status": "complete",
+            "current_stage": "story_complete",
+            "drawing_analysis": request.drawing.model_dump(),
+            "story_script": story.model_dump(),
+        })
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        db.save_checkpoint(request.user_id, request.run_id, {
+            "status": "error",
+            "current_stage": "story",
+            "error": str(e),
+        })
+
+
+@app.post("/api/v1/story/generate")
+async def api_generate_story(request: StoryRequest):
+    """Generate a story asynchronously. Poll /api/v1/jobs/{run_id}/status for results."""
+    if not request.user_id or not request.run_id:
+        raise HTTPException(status_code=400, detail="user_id and run_id are required")
+
+    db = get_database()
+    # Initialize checkpoint
+    db.save_checkpoint(request.user_id, request.run_id, {
+        "status": "processing",
+        "current_stage": "story",
+        "drawing_analysis": request.drawing.model_dump(),
+    })
+
+    # Start background task
+    asyncio.create_task(process_story_background(request))
+
+    # Return immediately
+    return {"run_id": request.run_id, "status": "processing", "current_stage": "story"}
 
 
 @app.post("/api/v1/images/generate", response_model=ImageResult)
