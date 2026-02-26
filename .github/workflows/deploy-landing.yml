@@ -2,7 +2,7 @@ name: Deploy Landing Page
 
 on:
   push:
-    branches: [ui]
+    branches: [main]
     paths:
       - 'landing-page/**'
       - '.github/workflows/deploy-landing.yml'
