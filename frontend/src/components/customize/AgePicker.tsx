@@ -10,8 +10,8 @@ interface AgePickerProps {
 export default function AgePicker({
   value,
   onChange,
-  min = 2,
-  max = 9
+  min = 3,
+  max = 7
 }: AgePickerProps) {
   const currentValue = value ?? min;
 

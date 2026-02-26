@@ -127,7 +127,7 @@ class StoryRequest(BaseModel):
     theme: Theme
     personal_context: str | None = None
     voice_type: VoiceType
-    child_age: int = Field(ge=2, le=9)
+    child_age: int = Field(ge=3, le=7)
     user_id: str | None = None
     run_id: str | None = None
 

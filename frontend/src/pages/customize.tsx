@@ -18,7 +18,7 @@ const customizationSchema = z.object({
   style: z.enum(['storybook', 'watercolor']),
   theme: z.enum(['adventure', 'kindness', 'bravery', 'bedtime', 'friendship', 'counting', 'nature']),
   voice: z.enum(['gentle', 'cheerful']),
-  age: z.number().min(2).max(9),
+  age: z.number().min(3).max(7),
   personalContext: z.string().optional(),
 });
 
