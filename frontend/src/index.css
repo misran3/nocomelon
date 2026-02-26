@@ -1,69 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Playful Children's App Theme */
-    --background: 0 0% 98%;
-    --foreground: 218 23% 23%;
+    /* NoComelon Theme - matches landing page */
+    --background: 0 0% 98%;           /* #FAFAFA */
+    --foreground: 218 23% 23%;        /* #2D3748 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 218 23% 23%;
+    --card: 0 0% 100%;                /* #FFFFFF */
+    --card-foreground: 218 23% 23%;   /* #2D3748 */
 
     --popover: 0 0% 100%;
     --popover-foreground: 218 23% 23%;
 
-    --primary: 0 100% 71%;
+    --primary: 0 100% 71%;            /* #FF6B6B */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 174 64% 56%;
-    --secondary-foreground: 222 84% 4.9%;
+    --secondary: 174 64% 56%;         /* #4ECDC4 */
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215 16% 52%;
+    --muted-foreground: 215 19% 35%;  /* #4A5568 */
 
-    --accent: 47 100% 71%;
-    --accent-foreground: 222 84% 4.9%;
+    --accent: 47 100% 71%;            /* #FFE66D */
+    --accent-foreground: 218 23% 23%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
+    --border: 214 22% 69%;            /* #A0AEC0 */
+    --input: 214 22% 85%;
     --ring: 0 100% 71%;
 
     --radius: 0.5rem;
+
+    --font-sans: 'Inter', system-ui, sans-serif;
   }
 
   .dark {
-    /* Dark mode fallbacks (approximated based on light mode) */
-    --background: 222.2 84% 4.9%;
+    /* Dark mode - NoComelon theme */
+    --background: 220 20% 10%;
     --foreground: 0 0% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 220 20% 14%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 220 20% 14%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 0 100% 71%;
+    --primary: 0 100% 71%;            /* #FF6B6B */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 176 57% 55%;
+    --secondary: 174 64% 56%;         /* #4ECDC4 */
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 20% 20%;
+    --muted-foreground: 215 15% 65%;
 
-    --accent: 50 100% 71%;
-    --accent-foreground: 218 23% 23%;
+    --accent: 47 100% 71%;            /* #FFE66D */
+    --accent-foreground: 220 20% 10%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62.8% 50%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 220 15% 25%;
+    --input: 220 15% 25%;
     --ring: 0 100% 71%;
   }
 }
@@ -74,6 +78,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
   }
 }
 
