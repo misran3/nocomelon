@@ -4,13 +4,13 @@ const team = [
   {
     name: 'Mohammed Misran',
     university: 'University of Pittsburgh',
-    photo: '/team-misran.jpeg',
+    photo: 'team-misran.jpeg',
     linkedin: 'https://www.linkedin.com/in/mmisran',
   },
   {
     name: 'Isha Kaushik',
     university: 'Columbia University',
-    photo: '/team-isha.jpeg',
+    photo: 'team-isha.jpeg',
     linkedin: 'https://www.linkedin.com/in/ishakaushik04/',
   },
 ];
@@ -30,7 +30,7 @@ export default function Team() {
               {/* Photo */}
               <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary/20 mb-4">
                 <img
-                  src={member.photo}
+                  src={`${import.meta.env.BASE_URL}${member.photo}`}
                   alt={member.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
