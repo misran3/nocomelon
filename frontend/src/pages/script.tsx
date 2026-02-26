@@ -16,6 +16,7 @@ export default function ScriptPage() {
   const { state, setScript } = useWizardState();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [title, setTitle] = useState<string | null>(null);
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,6 +27,7 @@ export default function ScriptPage() {
   const handlePollComplete = useCallback((data: { story_script: Record<string, unknown> | null }) => {
     if (data.story_script) {
       const script = data.story_script as unknown as StoryScript;
+      setTitle(script.title || null);
       setScenes(script.scenes);
       setScript(script);
       setIsLoading(false);
@@ -81,6 +83,7 @@ export default function ScriptPage() {
     // Guard: only fetch once, or if script already exists
     if (hasFetched.current || state.script) {
       if (state.script) {
+        setTitle(state.script.title || null);
         setScenes(state.script.scenes);
         setIsLoading(false);
       }
@@ -122,6 +125,7 @@ export default function ScriptPage() {
 
   const handleAction = () => {
     const script: StoryScript = {
+      title,
       scenes,
       total_scenes: scenes.length
     };
@@ -184,9 +188,9 @@ export default function ScriptPage() {
     >
         <div className="space-y-6 animate-in fade-in duration-300">
           <div>
-            <h2 className="text-2xl font-bold">Review your story</h2>
-          <p className="text-muted-foreground text-sm">Edit any text below</p>
-        </div>
+            <h2 className="text-2xl font-bold">{title || 'Review your story'}</h2>
+            <p className="text-muted-foreground text-sm">Edit any scene below</p>
+          </div>
 
         <Button
           variant="outline"
