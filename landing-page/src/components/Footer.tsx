@@ -15,7 +15,7 @@ export default function Footer() {
         <p className="text-text-muted text-sm mb-4">
           Made with{' '}
           <a
-            href="https://claude.ai/code"
+            href="https://claude.com/product/claude-code"
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary hover:underline"
