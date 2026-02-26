@@ -202,8 +202,9 @@ export default function PreviewPage() {
     );
   }
 
-  const minutes = Math.floor((state.video?.duration_sec || 0) / 60);
-  const seconds = ((state.video?.duration_sec || 0) % 60).toString().padStart(2, '0');
+  const totalSeconds = Math.round(state.video?.duration_sec || 0);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = (totalSeconds % 60).toString().padStart(2, '0');
 
   return (
     <WizardLayout
