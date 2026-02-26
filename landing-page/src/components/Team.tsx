@@ -1,18 +1,17 @@
 import { Linkedin } from 'lucide-react';
 
-// TODO: Replace with actual team data
 const team = [
   {
-    name: 'Team Member 1',
-    university: 'Columbia University',
-    photo: '/team-1.jpg', // Replace with actual photo
-    linkedin: 'https://linkedin.com/in/member1',
+    name: 'Mohammed Misran',
+    university: 'University of Pittsburgh',
+    photo: '/team-misran.jpeg',
+    linkedin: 'https://www.linkedin.com/in/mmisran',
   },
   {
-    name: 'Team Member 2',
+    name: 'Isha Kaushik',
     university: 'Columbia University',
-    photo: '/team-2.jpg', // Replace with actual photo
-    linkedin: 'https://linkedin.com/in/member2',
+    photo: '/team-isha.jpeg',
+    linkedin: 'https://www.linkedin.com/in/ishakaushik04/',
   },
 ];
 
