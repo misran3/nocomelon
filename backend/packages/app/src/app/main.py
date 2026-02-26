@@ -4,8 +4,9 @@ import subprocess
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from app.config import get_settings
 from app.database import get_database
@@ -32,6 +33,20 @@ from app.stages import (
     generate_audio,
     assemble_video,
 )
+
+
+class JobStatusResponse(BaseModel):
+    """Response model for job status polling."""
+    user_id: str
+    run_id: str
+    status: str  # "processing", "complete", "error"
+    current_stage: str | None = None
+    error: str | None = None
+    drawing_analysis: dict | None = None
+    story_script: dict | None = None
+    images: list | None = None
+    video: dict | None = None
+    updated_at: str | None = None
 
 
 app = FastAPI(
@@ -273,3 +288,26 @@ async def api_generate_pipeline(request: PipelineRequest):
                 "error": str(e),
             })
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# Job status endpoint (for async polling)
+@app.get("/api/v1/jobs/{run_id}/status")
+async def get_job_status(run_id: str, user_id: str = Query(...)) -> JobStatusResponse:
+    """Get the status of an async job by polling the checkpoint."""
+    db = get_database()
+    checkpoint = db.get_checkpoint(user_id, run_id)
+    if not checkpoint:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    return JobStatusResponse(
+        user_id=checkpoint.get("user_id", user_id),
+        run_id=checkpoint.get("run_id", run_id),
+        status=checkpoint.get("status", "processing"),
+        current_stage=checkpoint.get("current_stage"),
+        error=checkpoint.get("error"),
+        drawing_analysis=checkpoint.get("drawing_analysis"),
+        story_script=checkpoint.get("story_script"),
+        images=checkpoint.get("images"),
+        video=checkpoint.get("video"),
+        updated_at=checkpoint.get("updated_at"),
+    )
