@@ -78,8 +78,10 @@ export function StorybookSheet({ storybook, open, onOpenChange, onDelete }: Stor
           </SheetHeader>
         </div>
 
-        <div className="relative w-full">
-          <VideoPlayer src={videoUrl || ''} poster={thumbnailUrl || ''} />
+        <div className="flex-1 min-h-0 flex items-center justify-center px-5 overflow-hidden">
+          <div className="w-full max-h-full">
+            <VideoPlayer src={videoUrl || ''} poster={thumbnailUrl || ''} />
+          </div>
         </div>
 
         <div className="p-5 pt-4 space-y-3 border-t bg-background">
