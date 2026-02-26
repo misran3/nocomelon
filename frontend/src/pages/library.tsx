@@ -69,7 +69,12 @@ export default function LibraryPage() {
         {library.length > 0 ? (
           <>
             <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold text-foreground">Your Storybooks</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-foreground">Your Storybooks</h1>
+                <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold">
+                  {library.length} {library.length === 1 ? 'story' : 'stories'}
+                </div>
+              </div>
               <Button
                 variant="outline"
                 onClick={handleCreateNew}
