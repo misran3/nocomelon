@@ -14,10 +14,9 @@ from app.config import get_settings
 
 # Age-based content guidelines
 AGE_GUIDELINES = {
-    (2, 3): "Use very simple words (5-7 words per sentence). 3-4 scenes total. Simple cause and effect.",
-    (4, 5): "Use basic adjectives (8-12 words per sentence). 5-6 scenes total. Clear story arc.",
-    (6, 7): "Richer vocabulary (12-15 words per sentence). 6-7 scenes. Add light humor.",
-    (8, 9): "Age-appropriate language (15-20 words per sentence). 7-8 scenes. Mini plot twists OK.",
+    (3, 4): "Use very simple words (5-7 words per sentence). 3-4 scenes total. Simple cause and effect.",
+    (5, 6): "Use basic adjectives (8-12 words per sentence). 5-6 scenes total. Clear story arc.",
+    (7, 7): "Richer vocabulary (12-15 words per sentence). 6-7 scenes. Add light humor.",
 }
 
 
@@ -26,7 +25,7 @@ def get_age_guideline(age: int) -> str:
     for (min_age, max_age), guideline in AGE_GUIDELINES.items():
         if min_age <= age <= max_age:
             return guideline
-    return AGE_GUIDELINES[(4, 5)]  # Default
+    return AGE_GUIDELINES[(5, 6)]  # Default
 
 
 # Create the story agent
@@ -45,6 +44,7 @@ CONTENT RULES (non-negotiable):
 - No mention of real-world dangers (strangers, accidents)
 
 FORMAT:
+- Create a creative, engaging title for the story (e.g., "Dino's Big Adventure" not just "A Dinosaur")
 - Each scene should be tagged with [SCENE N] in the text
 - Return scenes as a list with number and text
 - Include an [END] scene with a gentle lesson/moral

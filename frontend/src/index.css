@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* NoComelon Theme - matches landing page */
+    --background: 0 0% 98%;           /* #FAFAFA */
+    --foreground: 218 23% 23%;        /* #2D3748 */
+
+    --card: 0 0% 100%;                /* #FFFFFF */
+    --card-foreground: 218 23% 23%;   /* #2D3748 */
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 218 23% 23%;
+
+    --primary: 0 100% 71%;            /* #FF6B6B */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 174 64% 56%;         /* #4ECDC4 */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 19% 35%;  /* #4A5568 */
+
+    --accent: 47 100% 71%;            /* #FFE66D */
+    --accent-foreground: 218 23% 23%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214 22% 69%;            /* #A0AEC0 */
+    --input: 214 22% 85%;
+    --ring: 0 100% 71%;
+
+    --radius: 0.5rem;
+
+    --font-sans: 'Inter', system-ui, sans-serif;
+  }
+
+  .dark {
+    /* Dark mode - NoComelon theme */
+    --background: 220 20% 10%;
+    --foreground: 0 0% 98%;
+
+    --card: 220 20% 14%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 220 20% 14%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 100% 71%;            /* #FF6B6B */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 174 64% 56%;         /* #4ECDC4 */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 20% 20%;
+    --muted-foreground: 215 15% 65%;
+
+    --accent: 47 100% 71%;            /* #FFE66D */
+    --accent-foreground: 220 20% 10%;
+
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 220 15% 25%;
+    --input: 220 15% 25%;
+    --ring: 0 100% 71%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+  }
+}
+
+/* Mobile native feel */
+html {
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe area utilities using CSS env() */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.scrollable {
+  -webkit-overflow-scrolling: touch;
+}

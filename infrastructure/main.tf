@@ -136,6 +136,7 @@ resource "aws_lb" "app" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
   subnets            = data.aws_subnets.selected.ids
+  idle_timeout       = 300  # 5 minutes for long-running pipeline requests
 }
 
 resource "aws_lb_target_group" "app" {
@@ -248,6 +249,206 @@ resource "aws_iam_role_policy" "ecs_task_s3" {
   })
 }
 
+resource "aws_iam_role_policy" "ecs_task_dynamodb" {
+  name = "${var.app_name}-dynamodb-access"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Query"
+      ]
+      Resource = [
+        aws_dynamodb_table.library.arn,
+        "${aws_dynamodb_table.library.arn}/index/*",
+        aws_dynamodb_table.checkpoints.arn
+      ]
+    }]
+  })
+}
+
+# ------------------------------------------------------------------------------
+# Cognito User Pool
+# ------------------------------------------------------------------------------
+resource "aws_cognito_user_pool" "main" {
+  name = "${var.app_name}-users"
+
+  username_attributes      = ["email"]
+  auto_verified_attributes = ["email"]
+
+  password_policy {
+    minimum_length    = 8
+    require_lowercase = true
+    require_numbers   = true
+    require_symbols   = false
+    require_uppercase = true
+  }
+
+  account_recovery_setting {
+    recovery_mechanism {
+      name     = "verified_email"
+      priority = 1
+    }
+  }
+}
+
+# ------------------------------------------------------------------------------
+# Cognito App Client (no secret for SPA)
+# ------------------------------------------------------------------------------
+resource "aws_cognito_user_pool_client" "app" {
+  name         = "${var.app_name}-app"
+  user_pool_id = aws_cognito_user_pool.main.id
+
+  explicit_auth_flows = [
+    "ALLOW_USER_SRP_AUTH",
+    "ALLOW_REFRESH_TOKEN_AUTH"
+  ]
+
+  generate_secret = false
+}
+
+# ------------------------------------------------------------------------------
+# Cognito Identity Pool (for S3 access via Amplify)
+# ------------------------------------------------------------------------------
+resource "aws_cognito_identity_pool" "main" {
+  identity_pool_name               = "${var.app_name}-identity"
+  allow_unauthenticated_identities = false
+
+  cognito_identity_providers {
+    client_id               = aws_cognito_user_pool_client.app.id
+    provider_name           = aws_cognito_user_pool.main.endpoint
+    server_side_token_check = false
+  }
+}
+
+# ------------------------------------------------------------------------------
+# IAM Role for Cognito Authenticated Users
+# ------------------------------------------------------------------------------
+resource "aws_iam_role" "cognito_authenticated" {
+  name = "${var.app_name}-cognito-authenticated"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = "cognito-identity.amazonaws.com"
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "cognito-identity.amazonaws.com:aud" = aws_cognito_identity_pool.main.id
+        }
+        "ForAnyValue:StringLike" = {
+          "cognito-identity.amazonaws.com:amr" = "authenticated"
+        }
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "cognito_s3_access" {
+  name = "${var.app_name}-cognito-s3"
+  role = aws_iam_role.cognito_authenticated.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = "${aws_s3_bucket.assets.arn}/$${cognito-identity.amazonaws.com:sub}/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "s3:ListBucket"
+        Resource = aws_s3_bucket.assets.arn
+        Condition = {
+          StringLike = {
+            "s3:prefix" = "$${cognito-identity.amazonaws.com:sub}/*"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_cognito_identity_pool_roles_attachment" "main" {
+  identity_pool_id = aws_cognito_identity_pool.main.id
+
+  roles = {
+    "authenticated" = aws_iam_role.cognito_authenticated.arn
+  }
+}
+
+# ------------------------------------------------------------------------------
+# DynamoDB - Library Table
+# ------------------------------------------------------------------------------
+resource "aws_dynamodb_table" "library" {
+  name         = "${var.app_name}-library"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+  range_key    = "id"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+
+  attribute {
+    name = "created_at"
+    type = "S"
+  }
+
+  # GSI for sorting by created_at (newest first)
+  global_secondary_index {
+    name            = "user_id-created_at-index"
+    hash_key        = "user_id"
+    range_key       = "created_at"
+    projection_type = "ALL"
+  }
+}
+
+# ------------------------------------------------------------------------------
+# DynamoDB - Checkpoints Table
+# ------------------------------------------------------------------------------
+resource "aws_dynamodb_table" "checkpoints" {
+  name         = "${var.app_name}-checkpoints"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+  range_key    = "run_id"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "run_id"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
+}
+
 # ------------------------------------------------------------------------------
 # ECS Cluster
 # ------------------------------------------------------------------------------
@@ -330,4 +531,70 @@ resource "aws_ecs_service" "app" {
   }
 
   depends_on = [aws_lb_listener.app]
+}
+
+# ------------------------------------------------------------------------------
+# Amplify Hosting (Static Frontend)
+# ------------------------------------------------------------------------------
+resource "aws_amplify_app" "frontend" {
+  name     = "${var.app_name}-frontend"
+  platform = "WEB"
+
+  # SPA redirect: all routes → index.html (except static assets)
+  custom_rule {
+    source = "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json|webp)$)([^.]+$)/>"
+    target = "/index.html"
+    status = "200"
+  }
+}
+
+resource "aws_amplify_branch" "main" {
+  app_id      = aws_amplify_app.frontend.id
+  branch_name = "main"
+  stage       = "PRODUCTION"
+}
+
+# ------------------------------------------------------------------------------
+# API Gateway HTTP API (HTTPS frontend for ALB)
+# ------------------------------------------------------------------------------
+resource "aws_apigatewayv2_api" "main" {
+  name          = "${var.app_name}-api"
+  protocol_type = "HTTP"
+}
+
+resource "aws_apigatewayv2_integration" "alb" {
+  api_id             = aws_apigatewayv2_api.main.id
+  integration_type   = "HTTP_PROXY"
+  integration_method = "ANY"
+  integration_uri    = "http://${aws_lb.app.dns_name}"
+  # No VPC Link needed - ALB is public/internet-facing
+}
+
+resource "aws_apigatewayv2_route" "proxy" {
+  api_id    = aws_apigatewayv2_api.main.id
+  route_key = "$default"
+  target    = "integrations/${aws_apigatewayv2_integration.alb.id}"
+}
+
+resource "aws_cloudwatch_log_group" "api_gateway" {
+  name              = "/aws/apigateway/${var.app_name}-api"
+  retention_in_days = 14
+}
+
+resource "aws_apigatewayv2_stage" "prod" {
+  api_id      = aws_apigatewayv2_api.main.id
+  name        = "$default"
+  auto_deploy = true
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_gateway.arn
+    format = jsonencode({
+      requestId      = "$context.requestId"
+      routeKey       = "$context.routeKey"
+      status         = "$context.status"
+      integrationStatus = "$context.integrationStatus"
+      integrationError  = "$context.integrationErrorMessage"
+      latency        = "$context.integrationLatency"
+    })
+  }
 }

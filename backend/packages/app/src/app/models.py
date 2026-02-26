@@ -52,6 +52,7 @@ class Scene(BaseModel):
 
 class StoryScript(BaseModel):
     """Complete story script with scenes."""
+    title: str | None = Field(default=None, description="Creative, child-friendly story title")
     scenes: list[Scene]
     total_scenes: int
 
@@ -60,7 +61,7 @@ class StoryScript(BaseModel):
 class GeneratedImage(BaseModel):
     """A generated image for a scene."""
     scene_number: int
-    path: str
+    key: str  # S3 key
 
 
 class ImageResult(BaseModel):
@@ -72,7 +73,7 @@ class ImageResult(BaseModel):
 class GeneratedAudio(BaseModel):
     """Generated audio for a scene."""
     scene_number: int
-    path: str
+    key: str  # S3 key
     duration_sec: float
 
 
@@ -85,8 +86,9 @@ class AudioResult(BaseModel):
 # Stage 5: Video Output
 class VideoResult(BaseModel):
     """Result of video assembly stage."""
-    video_path: str
+    video_key: str  # S3 key
     duration_sec: float
+    thumbnail_key: str  # S3 key
 
 
 # Checkpoint
@@ -116,6 +118,7 @@ class Checkpoint(BaseModel):
 class VisionRequest(BaseModel):
     """Request to analyze a drawing."""
     image_base64: str
+    user_id: str | None = None
 
 
 class StoryRequest(BaseModel):
@@ -124,7 +127,9 @@ class StoryRequest(BaseModel):
     theme: Theme
     personal_context: str | None = None
     voice_type: VoiceType
-    child_age: int = Field(ge=2, le=9)
+    child_age: int = Field(ge=3, le=7)
+    user_id: str | None = None
+    run_id: str | None = None
 
 
 class ImagesRequest(BaseModel):
@@ -151,3 +156,32 @@ class VideoRequest(BaseModel):
     audio: AudioResult
     music_track: str | None = None
     user_id: str | None = None
+
+
+# Library Models
+class LibraryEntry(BaseModel):
+    """A saved storybook in the library."""
+    id: str
+    title: str
+    thumbnail_key: str
+    video_key: str
+    duration_sec: float
+    style: Style
+    created_at: str
+
+
+# Pipeline Models
+class PipelineRequest(BaseModel):
+    """Request to run full video pipeline."""
+    run_id: str
+    story: StoryScript
+    drawing: DrawingAnalysis
+    style: Style
+    voice_type: VoiceType
+    user_id: str | None = None
+
+
+class PipelineResponse(BaseModel):
+    """Response from video pipeline."""
+    video: VideoResult
+    images: list[GeneratedImage]

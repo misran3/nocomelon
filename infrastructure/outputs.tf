@@ -46,3 +46,43 @@ output "elevenlabs_secret_arn" {
   description = "ARN of the ElevenLabs API key secret"
   value       = aws_secretsmanager_secret.elevenlabs_api_key.arn
 }
+
+output "cognito_user_pool_id" {
+  description = "Cognito User Pool ID"
+  value       = aws_cognito_user_pool.main.id
+}
+
+output "cognito_client_id" {
+  description = "Cognito App Client ID"
+  value       = aws_cognito_user_pool_client.app.id
+}
+
+output "cognito_identity_pool_id" {
+  description = "Cognito Identity Pool ID"
+  value       = aws_cognito_identity_pool.main.id
+}
+
+output "dynamodb_library_table" {
+  description = "DynamoDB Library table name"
+  value       = aws_dynamodb_table.library.name
+}
+
+output "dynamodb_checkpoints_table" {
+  description = "DynamoDB Checkpoints table name"
+  value       = aws_dynamodb_table.checkpoints.name
+}
+
+output "amplify_app_id" {
+  description = "Amplify App ID for deployments"
+  value       = aws_amplify_app.frontend.id
+}
+
+output "amplify_default_domain" {
+  description = "Amplify default domain"
+  value       = aws_amplify_app.frontend.default_domain
+}
+
+output "api_gateway_url" {
+  description = "API Gateway invoke URL"
+  value       = aws_apigatewayv2_api.main.api_endpoint
+}
