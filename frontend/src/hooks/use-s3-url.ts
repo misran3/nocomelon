@@ -17,7 +17,8 @@ export function useS3Url(key: string | null | undefined) {
     setIsLoading(true);
     setError(null);
 
-    getUrl({ key })
+    // Amplify v6 uses 'path' instead of 'key'
+    getUrl({ path: key })
       .then(({ url }) => {
         if (!cancelled) {
           setUrl(url.toString());
@@ -26,6 +27,7 @@ export function useS3Url(key: string | null | undefined) {
       })
       .catch((e) => {
         if (!cancelled) {
+          console.error('S3 URL resolution failed for key:', key, e);
           setError(e instanceof Error ? e.message : 'Failed to get URL');
           setIsLoading(false);
         }

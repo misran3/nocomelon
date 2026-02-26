@@ -3,13 +3,15 @@ import { renderHook, act } from '@testing-library/react';
 import { WizardProvider, useWizardState } from '../hooks/use-wizard-state';
 import { ReactNode } from 'react';
 
-// Mock localStorage
-const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-};
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+// Mock useAuth hook
+vi.mock('../hooks/use-auth', () => ({
+  useAuth: () => ({ user: { userId: 'test-user' } }),
+}));
+
+// Mock jobs API
+vi.mock('../api/jobs', () => ({
+  getJobStatus: vi.fn().mockRejectedValue(new Error('Not found')),
+}));
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <WizardProvider>{children}</WizardProvider>
@@ -18,7 +20,6 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 describe('useWizardState', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorageMock.getItem.mockReturnValue(null);
   });
 
   describe('setter reference stability', () => {
@@ -98,7 +99,6 @@ describe('useWizardState', () => {
 
       expect(result.current.state.run_id).toBeNull();
       expect(result.current.state.script).toBeNull();
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('nocomelon-wizard-state');
     });
   });
 });
