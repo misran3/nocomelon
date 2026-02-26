@@ -46,7 +46,7 @@ export default function Navbar() {
               <span>Try it now</span>
             </a>
             <a
-              href="https://github.com/your-repo" // TODO: Replace with actual repo
+              href="https://github.com/misran3/nocomelon"
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-secondary text-sm py-2 px-4"
