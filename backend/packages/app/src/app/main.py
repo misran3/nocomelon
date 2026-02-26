@@ -1,5 +1,6 @@
 """FastAPI application for NoComelon AI pipeline."""
 
+import asyncio
 import subprocess
 import uuid
 from datetime import datetime, timezone
@@ -107,24 +108,44 @@ async def status():
     }
 
 
-@app.post("/api/v1/vision/analyze", response_model=VisionResponse)
-async def api_analyze_drawing(request: VisionRequest):
-    """Stage 1: Analyze a drawing."""
+async def process_vision_background(image_base64: str, user_id: str, run_id: str):
+    """Background task to process vision analysis."""
+    db = get_database()
     try:
-        run_id = uuid.uuid4().hex[:8]
-        drawing = await analyze_drawing(request.image_base64)
-
-        # Save checkpoint if user is authenticated
-        if request.user_id:
-            db = get_database()
-            db.save_checkpoint(request.user_id, run_id, {
-                "current_stage": "vision",
-                "drawing_analysis": drawing.model_dump(),
-            })
-
-        return VisionResponse(run_id=run_id, drawing=drawing)
+        result = await analyze_drawing(image_base64)
+        db.save_checkpoint(user_id, run_id, {
+            "status": "complete",
+            "current_stage": "vision_complete",
+            "drawing_analysis": result.model_dump(),
+        })
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        db.save_checkpoint(user_id, run_id, {
+            "status": "error",
+            "current_stage": "vision",
+            "error": str(e),
+        })
+
+
+@app.post("/api/v1/vision/analyze")
+async def api_analyze_drawing(request: VisionRequest):
+    """Analyze a drawing asynchronously. Poll /api/v1/jobs/{run_id}/status for results."""
+    run_id = uuid.uuid4().hex[:8]
+
+    if not request.user_id:
+        raise HTTPException(status_code=400, detail="user_id is required for async processing")
+
+    db = get_database()
+    # Initialize checkpoint
+    db.save_checkpoint(request.user_id, run_id, {
+        "status": "processing",
+        "current_stage": "vision",
+    })
+
+    # Start background task
+    asyncio.create_task(process_vision_background(request.image_base64, request.user_id, run_id))
+
+    # Return immediately
+    return {"run_id": run_id, "status": "processing", "current_stage": "vision"}
 
 
 @app.post("/api/v1/story/generate", response_model=StoryScript)
