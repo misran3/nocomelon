@@ -35,16 +35,26 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* GitHub Button */}
-          <a
-            href="https://github.com/your-repo" // TODO: Replace with actual repo
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-primary text-sm py-2 px-4"
-          >
-            <Github className="w-4 h-4" />
-            <span className="hidden sm:inline">GitHub</span>
-          </a>
+          {/* CTA Buttons */}
+          <div className="flex items-center gap-3">
+            <a
+              href="https://your-app-url.com" // TODO: Replace with actual app URL
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary text-sm py-2 px-4"
+            >
+              <span>Try it now</span>
+            </a>
+            <a
+              href="https://github.com/your-repo" // TODO: Replace with actual repo
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-secondary text-sm py-2 px-4"
+            >
+              <Github className="w-4 h-4" />
+              <span className="hidden sm:inline">GitHub</span>
+            </a>
+          </div>
         </div>
       </div>
     </nav>
