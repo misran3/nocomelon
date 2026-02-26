@@ -5,6 +5,7 @@ import { RefreshCw } from 'lucide-react';
 import { Skeleton } from '../components/ui/skeleton';
 import { useWizardState } from '../hooks/use-wizard-state';
 import { useAuth } from '../hooks/use-auth';
+import { useJobPolling } from '../hooks/use-job-polling';
 import WizardLayout from '../components/layout/WizardLayout';
 import SceneEditor from '../components/script/SceneEditor';
 import { generateStory } from '../api';
@@ -21,32 +22,54 @@ export default function ScriptPage() {
   const [error, setError] = useState<string | null>(null);
   const hasFetched = useRef(false);
 
-  const generateStoryRequest = useCallback(() => {
-    if (!state.analysis) return null;
-    return {
+  // Polling hook for async story generation
+  const handlePollComplete = useCallback((data: { story_script: Record<string, unknown> | null }) => {
+    if (data.story_script) {
+      const script = data.story_script as unknown as StoryScript;
+      setScenes(script.scenes);
+      setScript(script);
+      setIsLoading(false);
+      setIsRegenerating(false);
+    }
+  }, [setScript]);
+
+  const handlePollError = useCallback((err: string) => {
+    setError(err || 'Failed to generate story');
+    setIsLoading(false);
+    setIsRegenerating(false);
+  }, []);
+
+  const { status, isPolling, startPolling } = useJobPolling(
+    state.run_id,
+    user?.userId ?? null,
+    {
+      onComplete: handlePollComplete,
+      onError: handlePollError,
+    }
+  );
+
+  const doGenerateStory = useCallback(async () => {
+    if (!state.analysis || !user?.userId || !state.run_id) {
+      setError('Missing required data');
+      return;
+    }
+
+    setError(null);
+    const request = {
       drawing: state.analysis,
       theme: state.customization.theme,
       voice_type: state.customization.voice,
       child_age: state.customization.age,
       personal_context: state.customization.personalContext || undefined,
-      user_id: user?.userId,
-      run_id: state.run_id || undefined,
+      user_id: user.userId,
+      run_id: state.run_id,
     };
-  }, [state.analysis, state.customization, state.run_id, user?.userId]);
 
-  const doGenerateStory = useCallback(async () => {
-    const request = generateStoryRequest();
-    if (!request) {
-      setError('Missing drawing analysis');
-      return null;
-    }
-
-    setError(null);
-    const script = await generateStory(request);
-    setScenes(script.scenes);
-    setScript(script);
-    return script;
-  }, [generateStoryRequest, setScript]);
+    // API now returns immediately
+    await generateStory(request);
+    // Start polling for results
+    startPolling();
+  }, [state.analysis, state.customization, state.run_id, user?.userId, startPolling]);
 
   useEffect(() => {
     document.title = 'NoComelon | Script';
@@ -71,7 +94,6 @@ export default function ScriptPage() {
       } catch (err) {
         setError('Failed to generate story. Please try again.');
         console.error('Failed to generate story:', err);
-      } finally {
         setIsLoading(false);
       }
     }
@@ -81,12 +103,13 @@ export default function ScriptPage() {
 
   const handleRegenerate = async () => {
     setIsRegenerating(true);
+    setError(null);
     try {
       await doGenerateStory();
+      // Polling will set isRegenerating to false when complete
     } catch (err) {
       setError('Failed to regenerate story. Please try again.');
       console.error('Failed to regenerate story:', err);
-    } finally {
       setIsRegenerating(false);
     }
   };
@@ -127,7 +150,6 @@ export default function ScriptPage() {
   }
 
   if (isLoading) {
-
     return (
       <WizardLayout
         currentStep={4}
@@ -143,6 +165,11 @@ export default function ScriptPage() {
               <Skeleton className="h-3 w-16 ml-auto" />
             </div>
           ))}
+          {isPolling && status?.current_stage && (
+            <p className="text-sm text-muted-foreground text-center">
+              {status.current_stage === 'story' ? 'Writing your story...' : 'Processing...'}
+            </p>
+          )}
         </div>
       </WizardLayout>
     );
