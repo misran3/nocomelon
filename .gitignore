@@ -218,6 +218,10 @@ __marimo__/
 # Git worktrees
 .worktrees
 
+# Node.js
+node_modules/
+dist/
+
 # NoComelon generated data
 backend/data/images/*
 backend/data/audio/*
