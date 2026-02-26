@@ -120,6 +120,7 @@ export default function RecognizePage() {
     <WizardLayout
       currentStep={2}
       actionLabel="Looks Good!"
+      actionDisabled={analyzing}
       onAction={handleAction}
       showProgress={true}
     >
