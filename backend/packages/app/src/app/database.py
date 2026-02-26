@@ -31,10 +31,12 @@ class Database:
 
     # Library methods
     def get_library(self, user_id: str) -> list[dict[str, Any]]:
-        """Get all storybooks for a user."""
+        """Get all storybooks for a user, sorted by created_at descending (newest first)."""
         response = self.library_table.query(
+            IndexName="user_id-created_at-index",
             KeyConditionExpression="user_id = :uid",
             ExpressionAttributeValues={":uid": user_id},
+            ScanIndexForward=False,  # Descending order (newest first)
         )
         return response.get("Items", [])
 

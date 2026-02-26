@@ -408,6 +408,19 @@ resource "aws_dynamodb_table" "library" {
     name = "id"
     type = "S"
   }
+
+  attribute {
+    name = "created_at"
+    type = "S"
+  }
+
+  # GSI for sorting by created_at (newest first)
+  global_secondary_index {
+    name            = "user_id-created_at-index"
+    hash_key        = "user_id"
+    range_key       = "created_at"
+    projection_type = "ALL"
+  }
 }
 
 # ------------------------------------------------------------------------------
