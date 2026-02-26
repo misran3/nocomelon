@@ -264,17 +264,20 @@ async def api_delete_from_library(storybook_id: str, user_id: str):
 
 
 # Pipeline endpoint
-@app.post("/api/v1/pipeline/generate", response_model=PipelineResponse)
-async def api_generate_pipeline(request: PipelineRequest):
-    """Run full video generation pipeline (images -> voice -> video)."""
+async def process_pipeline_background(request: PipelineRequest):
+    """Background task to process full video pipeline."""
     db = get_database()
     user_id = request.user_id
     run_id = request.run_id
 
     try:
-        # Stage 3: Generate images
-        if user_id:
-            db.save_checkpoint(user_id, run_id, {"current_stage": "images"})
+        # Stage: Images
+        db.save_checkpoint(user_id, run_id, {
+            "status": "processing",
+            "current_stage": "images",
+            "drawing_analysis": request.drawing.model_dump(),
+            "story_script": request.story.model_dump(),
+        })
         image_result = await generate_images(
             story=request.story,
             drawing=request.drawing,
@@ -283,12 +286,14 @@ async def api_generate_pipeline(request: PipelineRequest):
             user_id=user_id,
         )
 
-        # Stage 4: Generate voice
-        if user_id:
-            db.save_checkpoint(user_id, run_id, {
-                "current_stage": "voice",
-                "image_result": image_result.model_dump(),
-            })
+        # Stage: Voice
+        db.save_checkpoint(user_id, run_id, {
+            "status": "processing",
+            "current_stage": "voice",
+            "drawing_analysis": request.drawing.model_dump(),
+            "story_script": request.story.model_dump(),
+            "images": [{"scene_number": img.scene_number, "key": img.key} for img in image_result.images],
+        })
         audio_result = await generate_audio(
             story=request.story,
             voice_type=request.voice_type,
@@ -296,13 +301,14 @@ async def api_generate_pipeline(request: PipelineRequest):
             user_id=user_id,
         )
 
-        # Stage 5: Assemble video
-        if user_id:
-            db.save_checkpoint(user_id, run_id, {
-                "current_stage": "video",
-                "image_result": image_result.model_dump(),
-                "audio_result": audio_result.model_dump(),
-            })
+        # Stage: Video
+        db.save_checkpoint(user_id, run_id, {
+            "status": "processing",
+            "current_stage": "video",
+            "drawing_analysis": request.drawing.model_dump(),
+            "story_script": request.story.model_dump(),
+            "images": [{"scene_number": img.scene_number, "key": img.key} for img in image_result.images],
+        })
         video_result = await assemble_video(
             images=image_result,
             audio=audio_result,
@@ -310,25 +316,44 @@ async def api_generate_pipeline(request: PipelineRequest):
             user_id=user_id,
         )
 
-        # Mark complete
-        if user_id:
-            db.save_checkpoint(user_id, run_id, {
-                "current_stage": "complete",
-                "video_result": video_result.model_dump(),
-            })
-
-        return PipelineResponse(
-            video=video_result,
-            images=image_result.images,
-        )
+        # Complete
+        db.save_checkpoint(user_id, run_id, {
+            "status": "complete",
+            "current_stage": "video_complete",
+            "drawing_analysis": request.drawing.model_dump(),
+            "story_script": request.story.model_dump(),
+            "images": [{"scene_number": img.scene_number, "key": img.key} for img in image_result.images],
+            "video": video_result.model_dump(),
+        })
 
     except Exception as e:
-        if user_id:
-            db.save_checkpoint(user_id, run_id, {
-                "current_stage": "error",
-                "error": str(e),
-            })
-        raise HTTPException(status_code=500, detail=str(e))
+        db.save_checkpoint(user_id, run_id, {
+            "status": "error",
+            "current_stage": "error",
+            "error": str(e),
+        })
+
+
+@app.post("/api/v1/pipeline/generate")
+async def api_generate_pipeline(request: PipelineRequest):
+    """Generate video asynchronously. Poll /api/v1/jobs/{run_id}/status for results."""
+    if not request.user_id or not request.run_id:
+        raise HTTPException(status_code=400, detail="user_id and run_id are required")
+
+    db = get_database()
+    # Initialize checkpoint
+    db.save_checkpoint(request.user_id, request.run_id, {
+        "status": "processing",
+        "current_stage": "images",
+        "drawing_analysis": request.drawing.model_dump(),
+        "story_script": request.story.model_dump(),
+    })
+
+    # Start background task
+    asyncio.create_task(process_pipeline_background(request))
+
+    # Return immediately
+    return {"run_id": request.run_id, "status": "processing", "current_stage": "images"}
 
 
 # Job status endpoint (for async polling)
