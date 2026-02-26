@@ -177,9 +177,22 @@ export default function RecognizePage() {
             />
           </div>
 
+          {details.length > 0 && (
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Details</div>
+              <div className="flex flex-wrap gap-2">
+                {details.map((detail, index) => (
+                  <span key={index} className="px-3 py-1 rounded-full text-sm font-medium border bg-card">
+                    {detail}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {colors.length > 0 && (
             <div>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Detected Colors</div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Colors</div>
               <div className="flex flex-wrap gap-2">
                 {colors.map((color, index) => (
                   <span key={index} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border bg-card">
