@@ -36,20 +36,19 @@ export default function HowItWorks() {
           ))}
         </div>
 
-        {/* Mobile: Vertical pipeline */}
-        <div className="md:hidden space-y-4">
+        {/* Mobile: Centered grid */}
+        <div className="md:hidden grid grid-cols-2 gap-4">
           {steps.map((step, index) => (
-            <div key={step.label} className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                <step.icon className="w-7 h-7 text-primary" />
+            <div
+              key={step.label}
+              className="flex flex-col items-center text-center p-2 bg-background rounded-xl border border-border"
+            >
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-2">
+                <step.icon className="w-6 h-6 text-primary" />
               </div>
-              <div>
-                <span className="font-semibold">{step.label}</span>
-                <span className="text-text-muted ml-2">{step.sublabel}</span>
-              </div>
-              {index < steps.length - 1 && (
-                <div className="absolute left-7 mt-16 w-0.5 h-4 bg-border" />
-              )}
+              <span className="text-xs text-primary font-semibold mb-1">Step {index + 1}</span>
+              <span className="font-semibold text-sm">{step.label}</span>
+              <span className="text-xs text-text-muted">{step.sublabel}</span>
             </div>
           ))}
         </div>
