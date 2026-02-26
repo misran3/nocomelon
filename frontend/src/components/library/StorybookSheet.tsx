@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { LibraryEntry } from '../../types';
 import { useS3Url } from '../../hooks/use-s3-url';
-import VideoPlayer from '../preview/VideoPlayer';
 import { 
   Sheet, 
   SheetContent, 
@@ -78,10 +77,13 @@ export function StorybookSheet({ storybook, open, onOpenChange, onDelete }: Stor
           </SheetHeader>
         </div>
 
-        <div className="flex-1 min-h-0 flex items-center justify-center px-5 overflow-hidden">
-          <div className="w-full max-h-full">
-            <VideoPlayer src={videoUrl || ''} poster={thumbnailUrl || ''} />
-          </div>
+        <div className="flex-1 min-h-0 flex items-center justify-center px-5">
+          <video
+            className="max-w-full max-h-full rounded-2xl bg-black"
+            controls
+            src={videoUrl || ''}
+            poster={thumbnailUrl || ''}
+          />
         </div>
 
         <div className="p-5 pt-4 space-y-3 border-t bg-background">
