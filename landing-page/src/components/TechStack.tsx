@@ -1,11 +1,12 @@
 const techStack = [
-  'React',
-  'Tailwind CSS',
-  'Claude AI',
+  'FastAPI',
+  'Pydantic AI',
+  'OpenAI',
   'DALL-E 3',
   'ElevenLabs',
   'FFmpeg',
-  'Convex',
+  'React',
+  'Tailwind CSS',
   'AWS',
 ];
 
@@ -52,7 +53,7 @@ export default function TechStack() {
             {techStack.map((tech) => (
               <span
                 key={tech}
-                className="px-4 py-2 bg-surface rounded-full border border-border text-sm font-medium hover:border-primary transition-colors"
+                className="px-4 py-2 bg-primary text-white rounded-full text-sm font-medium hover:bg-primary-hover transition-colors"
               >
                 {tech}
               </span>
