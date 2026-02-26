@@ -3,5 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/columbia-hackathon/', // GitHub Pages base path - adjust as needed
+  server: {
+    port: 3001,
+  },
 });
