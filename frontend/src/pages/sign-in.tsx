@@ -167,6 +167,13 @@ export default function SignInPage() {
             )}
           </Button>
         </form>
+
+        <p className="text-xs text-center text-muted-foreground">
+          Need an account? Contact{' '}
+          <a href="mailto:mohammed.misran@pitt.edu" className="text-primary hover:underline">
+            mohammed.misran@pitt.edu
+          </a>
+        </p>
       </div>
     </div>
   );
