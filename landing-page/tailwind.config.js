@@ -14,9 +14,9 @@ export default {
         surface: '#FFFFFF',
         text: {
           DEFAULT: '#2D3748',
-          muted: '#718096',
+          muted: '#4A5568',
         },
-        border: '#E2E8F0',
+        border: '#A0AEC0',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
