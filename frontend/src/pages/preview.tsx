@@ -135,8 +135,8 @@ export default function PreviewPage() {
     try {
       await addStorybook(entry);
       toast.success('Saved to library!');
-      resetWizard();
       navigate('/library');
+      resetWizard();
     } catch (e) {
       toast.error('Failed to save to library');
       console.error('Save error:', e);
