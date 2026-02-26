@@ -13,4 +13,5 @@ NoComelon turns a child's drawing into a 1-2 minute animated storybook with narr
 CoComelon feeds your kid content. NoComelon lets you make it.
 
 Developed by Mohammed Misran and Isha Kaushik
+
 Submitted to Columbia AI for Good Hackathon · 20-27th February 2026
