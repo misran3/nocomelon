@@ -45,6 +45,7 @@ CONTENT RULES (non-negotiable):
 - No mention of real-world dangers (strangers, accidents)
 
 FORMAT:
+- Create a creative, engaging title for the story (e.g., "Dino's Big Adventure" not just "A Dinosaur")
 - Each scene should be tagged with [SCENE N] in the text
 - Return scenes as a list with number and text
 - Include an [END] scene with a gentle lesson/moral

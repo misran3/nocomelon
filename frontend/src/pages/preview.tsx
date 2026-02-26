@@ -124,7 +124,7 @@ export default function PreviewPage() {
 
     const entry: LibraryEntry = {
       id: state.run_id,
-      title: state.analysis?.subject || 'My Storybook',
+      title: state.script?.title || state.analysis?.subject || 'My Storybook',
       thumbnail_key: state.video.thumbnail_key,
       video_key: state.video.video_key,
       duration_sec: state.video.duration_sec,
@@ -221,7 +221,7 @@ export default function PreviewPage() {
         />
 
         <div>
-          <p className="text-lg font-semibold">{state.analysis?.subject || 'My Storybook'}</p>
+          <p className="text-lg font-semibold">{state.script?.title || state.analysis?.subject || 'My Storybook'}</p>
           <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
             <span>{minutes}:{seconds}</span>
             <span>·</span>
