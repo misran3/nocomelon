@@ -39,6 +39,8 @@ jobs:
           pnpm install
 
       - name: Build
+        env:
+          VITE_APP_URL: ${{ vars.APP_URL }}
         run: |
           cd landing-page
           pnpm build

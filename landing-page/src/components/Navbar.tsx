@@ -1,4 +1,5 @@
 import { Sparkles, Github } from 'lucide-react';
+import { APP_URL, GITHUB_URL } from '../constants';
 
 const navLinks = [
   { href: '#how-it-works', label: 'How It Works' },
@@ -37,16 +38,22 @@ export default function Navbar() {
 
           {/* CTA Buttons */}
           <div className="flex items-center gap-3">
+            {APP_URL ? (
+              <a
+                href={APP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary text-sm py-2 px-4"
+              >
+                <span>Try it now</span>
+              </a>
+            ) : (
+              <span className="btn btn-primary text-sm py-2 px-4 opacity-75 cursor-default">
+                Coming Soon
+              </span>
+            )}
             <a
-              href="https://your-app-url.com" // TODO: Replace with actual app URL
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-primary text-sm py-2 px-4"
-            >
-              <span>Try it now</span>
-            </a>
-            <a
-              href="https://github.com/misran3/nocomelon"
+              href={GITHUB_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-secondary text-sm py-2 px-4"

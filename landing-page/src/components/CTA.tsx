@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react';
+import { APP_URL } from '../constants';
 
 export default function CTA() {
   return (
@@ -13,15 +14,21 @@ export default function CTA() {
         <p className="text-lg text-text-muted max-w-xl mx-auto mb-8">
           Transform your child's imagination into something magical.
         </p>
-        <a
-          href="https://your-app-url.com" // TODO: Replace with actual app URL
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-primary text-lg px-8 py-4"
-        >
-          <span>Try It Now</span>
-          <ArrowRight className="w-5 h-5" />
-        </a>
+{APP_URL ? (
+          <a
+            href={APP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-primary text-lg px-8 py-4"
+          >
+            <span>Try It Now</span>
+            <ArrowRight className="w-5 h-5" />
+          </a>
+        ) : (
+          <span className="btn btn-primary text-lg px-8 py-4 opacity-75 cursor-default">
+            Coming Soon
+          </span>
+        )}
       </div>
     </section>
   );

@@ -1,4 +1,5 @@
 import { Sparkles } from 'lucide-react';
+import { CLAUDE_CODE_URL } from '../constants';
 
 export default function Footer() {
   return (
@@ -15,7 +16,7 @@ export default function Footer() {
         <p className="text-text-muted text-sm mb-4">
           Made with{' '}
           <a
-            href="https://claude.com/product/claude-code"
+            href={CLAUDE_CODE_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary hover:underline"
