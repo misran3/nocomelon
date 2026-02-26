@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { WizardState, DrawingAnalysis, StoryScript, VideoResult } from '../types/index';
+import { getJobStatus } from '../api/jobs';
+import { useAuth } from './use-auth';
 
 interface WizardContextType {
   state: WizardState;
@@ -30,40 +32,33 @@ const initialState: WizardState = {
 const WizardContext = createContext<WizardContextType | undefined>(undefined);
 
 export function WizardProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<WizardState>(() => {
-    if (typeof window === 'undefined') return initialState;
-    try {
-      const saved = localStorage.getItem('nocomelon-wizard-state');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Ensure drawing is null as it cannot be serialized
-        // Merge with initialState to ensure all fields exist (e.g. if new fields are added later)
-        return { 
-          ...initialState, 
-          ...parsed, 
-          drawing: null,
-          customization: {
-            ...initialState.customization,
-            ...(parsed.customization || {})
-          }
-        };
-      }
-    } catch (error) {
-      console.error('Failed to parse wizard state from local storage', error);
-    }
-    return initialState;
-  });
+  const [state, setState] = useState<WizardState>(initialState);
+  const { user } = useAuth();
 
-  useEffect(() => {
+  // Restore state from DynamoDB checkpoint on mount (if run_id exists in URL or state)
+  const restoreFromCheckpoint = useCallback(async (runId: string, userId: string) => {
     try {
-      // Exclude drawing from serialization
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { drawing, ...serializableState } = state;
-      localStorage.setItem('nocomelon-wizard-state', JSON.stringify(serializableState));
-    } catch (error) {
-      console.error('Failed to save wizard state to local storage', error);
+      const checkpoint = await getJobStatus(runId, userId);
+      if (checkpoint && checkpoint.status === 'complete') {
+        setState(prev => ({
+          ...prev,
+          run_id: runId,
+          analysis: checkpoint.drawing_analysis as DrawingAnalysis | null,
+          script: checkpoint.story_script as StoryScript | null,
+          video: checkpoint.video as VideoResult | null,
+        }));
+      }
+    } catch (e) {
+      console.error('Failed to restore checkpoint:', e);
     }
-  }, [state]);
+  }, []);
+
+  // Auto-restore if we have a run_id and user
+  useEffect(() => {
+    if (state.run_id && user?.userId && !state.analysis) {
+      restoreFromCheckpoint(state.run_id, user.userId);
+    }
+  }, [state.run_id, user?.userId, state.analysis, restoreFromCheckpoint]);
 
   const setRunId = useCallback((run_id: string | null) => {
     setState((prev) => ({ ...prev, run_id }));
@@ -94,7 +89,6 @@ export function WizardProvider({ children }: { children: React.ReactNode }) {
 
   const resetWizard = useCallback(() => {
     setState(initialState);
-    localStorage.removeItem('nocomelon-wizard-state');
   }, []);
 
   const contextValue = useMemo(() => ({
