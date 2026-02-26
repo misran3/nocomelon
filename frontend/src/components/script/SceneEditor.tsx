@@ -25,11 +25,12 @@ export default function SceneEditor({ scene, onChange }: Props) {
         ref={textareaRef}
         className="border-none bg-transparent resize-none w-full outline-none focus:outline-none text-sm leading-relaxed"
         rows={3}
+        maxLength={1000}
         value={scene.text}
         onChange={(e) => onChange(e.target.value)}
       />
       <div className="text-xs text-muted-foreground mt-2 text-right">
-        {scene.text.length} chars
+        {scene.text.length}/1000
       </div>
     </div>
   );
