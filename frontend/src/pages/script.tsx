@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Button } from '../components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { Skeleton } from '../components/ui/skeleton';
+import { LoadingDots } from '../components/ui/loading-dots';
 import { useWizardState } from '../hooks/use-wizard-state';
 import { useAuth } from '../hooks/use-auth';
 import { useJobPolling } from '../hooks/use-job-polling';
@@ -169,11 +170,7 @@ export default function ScriptPage() {
               <Skeleton className="h-3 w-16 ml-auto" />
             </div>
           ))}
-          {isPolling && status?.current_stage && (
-            <p className="text-sm text-muted-foreground text-center">
-              {status.current_stage === 'story' ? 'Writing your story...' : 'Processing...'}
-            </p>
-          )}
+          <LoadingDots label={status?.current_stage === 'story' ? 'Writing your story...' : 'Processing...'} />
         </div>
       </WizardLayout>
     );

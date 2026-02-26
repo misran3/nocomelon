@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
+import { LoadingDots } from '../components/ui/loading-dots';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -167,13 +168,8 @@ export default function PreviewPage() {
           <Skeleton className="aspect-video w-full rounded-2xl" />
 
           {/* Generating message card */}
-          <div className="rounded-xl border bg-card p-4 text-center space-y-2">
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
-            <p className="text-sm font-medium text-muted-foreground">{currentStageLabel}</p>
+          <div className="rounded-xl border bg-card p-4">
+            <LoadingDots label={currentStageLabel} />
           </div>
 
           {/* Metadata skeletons */}

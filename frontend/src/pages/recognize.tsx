@@ -9,6 +9,7 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { Skeleton } from '../components/ui/skeleton';
+import { LoadingDots } from '../components/ui/loading-dots';
 import { toast } from 'sonner';
 import { DrawingAnalysis } from '../types';
 
@@ -142,11 +143,7 @@ export default function RecognizePage() {
           <Skeleton className="h-20 w-full rounded-md" />
           <Skeleton className="h-10 w-full rounded-md" />
           <Skeleton className="h-6 w-full rounded-full" />
-          {isPolling && status?.current_stage && (
-            <p className="text-sm text-muted-foreground text-center">
-              {status.current_stage === 'vision' ? 'Analyzing your drawing...' : 'Processing...'}
-            </p>
-          )}
+          <LoadingDots label={status?.current_stage === 'vision' ? 'Analyzing your drawing...' : 'Processing...'} />
         </div>
       ) : (
         <div className="bg-card rounded-xl border border-border p-4 space-y-4 animate-in fade-in duration-300">
