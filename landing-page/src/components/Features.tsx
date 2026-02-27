@@ -14,7 +14,7 @@ const features = [
   {
     icon: Baby,
     title: 'Age-Adaptive',
-    description: 'Content auto-adjusts for ages 2-9. Vocabulary, pacing, and story complexity scale with your child.',
+    description: 'Content auto-adjusts for ages 3-7. Vocabulary, pacing, and story complexity scale with your child.',
   },
   {
     icon: FileText,

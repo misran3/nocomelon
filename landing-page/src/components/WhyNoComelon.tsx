@@ -13,7 +13,7 @@ const cards = [
     icon: Users,
     title: 'Who We Help',
     description:
-      'Parents aged 25-45 with children aged 2-9 who want quality screen time, not just less screen time. They want to be creative directors, not just content blockers.',
+      'Parents with children aged 3-7 who want quality screen time, not just less screen time. They want to be creative directors, not just content blockers.',
     color: 'text-secondary',
     bg: 'bg-secondary/10',
   },
@@ -33,7 +33,7 @@ export default function WhyNoComelon() {
       <div className="section-container">
         <h2 className="section-title">Why NoComelon?</h2>
         <p className="section-subtitle">
-          We believe parents should create what their kids watch, not algorithms
+          We believe parents should co-create what their kids watch, not algorithms
         </p>
 
         <div className="grid md:grid-cols-3 gap-6">
